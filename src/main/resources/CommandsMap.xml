@@ -12,24 +12,25 @@
 	   	http://www.springframework.org/schema/util 
 		http://www.springframework.org/schema/util/spring-util.xsd
 		">
-					   
-	<context:property-placeholder location="classpath:CliInfo.properties"/>
+
+
+	<!-- For the name of table, it is required that is must start with letter 
+		and contains no space. -->
+	<util:map id="cmdRegxMap">
+		<entry key="^SHOW SCHEMAS\\s*?\\;$" 	value="showSchemas" />
+		<entry key="^USE\\s*?\\;$" 				value="use" />
+		<entry key="^SHOW TABLES\\s*?\\;$" 		value="showTables" />
+		<entry key="^CREATE SCHEMA.*?\\;$" 		value="createSchema"/>
+		<entry key="^CREATE TABLE.*?\\;$" 		value="createTable" />
+		<entry key="^INSERT INTO TABLE.*?\\;$" 	value="insertIntoTable" />
+		<entry key="^DROP TABLE.*?\\;$"			value="dropTable" />
+		<entry key="^SELECT.*?FROM.*?\\;$" 		value="select" />
+	</util:map>
+		
+	<util:map id="">
+		<entry></entry>
 	
-	<bean id="clidHandler" class="org.mo39.fmbh.databasedesign.utils.CliHandler">
-		<property name="welcomeInfo" value="${welcomeInfo}"/>
-		<property name="prompt" value="${prompt}"/>
-	</bean>
+	</util:map>
 	
-	<!-- H2 in memory database. Initialized by jdbc script.
-	<jdbc:embedded-database id="dataSource" type="H2">
-		<jdbc:script location="classpath:h2_in_memory_db_initial.sql" />
-	</jdbc:embedded-database>
-	-->
 	
 </beans>
-
-
-
-
-
-

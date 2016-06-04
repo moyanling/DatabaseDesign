@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:util="http://www.springframework.org/schema/util" 
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans 
+	   	http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+	   	http://www.springframework.org/schema/context   
+	   	http://www.springframework.org/schema/context/spring-context-4.2.xsd
+	   	http://www.springframework.org/schema/util 
+		http://www.springframework.org/schema/util/spring-util.xsd
+		">
+					   
+	<context:property-placeholder location="classpath:CliInfo.properties"/>
+	
+	<bean id="clidHandler" class="org.mo39.fmbh.databasedesign.utils.CliHandler">
+		<property name="welcomeInfo" value="${welcomeInfo}"/>
+		<property name="prompt" value="${prompt}"/>
+	</bean>
+	
+	<!-- H2 in memory database. Initialized by jdbc script.
+	<jdbc:embedded-database id="dataSource" type="H2">
+		<jdbc:script location="classpath:h2_in_memory_db_initial.sql" />
+	</jdbc:embedded-database>
+	-->
+	
+</beans>
+
+
+
+
+
+
