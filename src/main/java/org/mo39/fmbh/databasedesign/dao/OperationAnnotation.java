@@ -2,7 +2,6 @@ package org.mo39.fmbh.databasedesign.dao;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.lang.reflect.Method;
 
 public abstract class OperationAnnotation {
 
