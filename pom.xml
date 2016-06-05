@@ -52,6 +52,15 @@
 			<version>${com.h2database.version}</version>
 		</dependency>
 		
+		<!-- Support for testing Spring applications with tools such as JUnit and TestNG This artifact is generally always defined 
+			with a 'test' scope for the integration testing framework and unit testing stubs -->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-test</artifactId>
+			<version>${org.springframework.version}</version>
+			<scope>test</scope>
+		</dependency>		
+		
 		<!-- Application Context (depends on spring-core, spring-expression, spring-aop, spring-beans) This is the central artifact 
 			for Spring's Dependency Injection Container and is generally always defined -->
 		<dependency>

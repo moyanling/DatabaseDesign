@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans 
+	   	http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+	   	http://www.springframework.org/schema/context   
+	   	http://www.springframework.org/schema/context/spring-context-4.2.xsd
+	   	http://www.springframework.org/schema/util 
+		http://www.springframework.org/schema/util/spring-util.xsd
+		">
+				
+	<bean class="org.mo39.fmbh.databasedesign.dao.SupportedCmds" >
+		<!-- <property name="supportedCmdList" value="cmdList" /> -->
+		<property name="supportedCmdList">
+			<list>
+				<!-- The regular expression here is supposed to check the command only. 
+					Do not parse the command. -->
+				<bean id="showSchemas" class="org.mo39.fmbh.databasedesign.dao.SupportedCmds$Cmd">
+					<property name="regx" value="^SHOW\s*?SCHEMAS\s*?\;$" />
+					<property name="daoMethodName" value="showSchemas" />
+				</bean>
+				<!-- "^USE\\s*?([a-zA-Z][a-zA-Z0-9]*?)\\s*?\\;$" -->
+				<bean id="use" class="org.mo39.fmbh.databasedesign.dao.SupportedCmds$Cmd">
+					<property name="regx" value="^USE.*?\;$" />
+					<property name="daoMethodName" value="use" />
+				</bean>
+	
+				<bean id="showTables" class="org.mo39.fmbh.databasedesign.dao.SupportedCmds$Cmd">
+					<property name="regx" value="^SHOW\s*?TABLES\s*?\;$" />
+					<property name="daoMethodName" value="showTables" />
+				</bean>
+	
+				<bean id="createSchema" class="org.mo39.fmbh.databasedesign.dao.SupportedCmds$Cmd">
+					<property name="regx" value="^CREATE\s*?SCHEMA.*?\;$" />
+					<property name="daoMethodName" value="createSchema" />
+				</bean>
+	
+				<bean id="insertIntoTable" class="org.mo39.fmbh.databasedesign.dao.SupportedCmds$Cmd">
+					<property name="regx" value="^INSERT\s*?INTO\s*?TABLE.*?\;$" />
+					<property name="daoMethodName" value="insertIntoTable" />
+				</bean>
+	
+				<bean id="dropTable" class="org.mo39.fmbh.databasedesign.dao.SupportedCmds$Cmd">
+					<property name="regx" value="^DROP\s*?TABLE.*?\;$" />
+					<property name="daoMethodName" value="dropTable" />
+				</bean>
+	
+				<bean id="select" class="org.mo39.fmbh.databasedesign.dao.SupportedCmds$Cmd">
+					<property name="regx" value="^SELECT.*?FROM.*?\;$" />
+					<property name="daoMethodName" value="select" />
+				</bean>
+	
+				<bean id="createTable" class="org.mo39.fmbh.databasedesign.dao.SupportedCmds$Cmd">
+					<property name="regx" value="^CREATE\s*?TABLE.*?\;$" />
+					<property name="daoMethodName" value="createTable" />
+				</bean>
+				
+				<bean id="exit" class="org.mo39.fmbh.databasedesign.dao.SupportedCmds$Cmd">
+					<property name="regx" value="^EXIT\s*?\;$"/>
+					<property name="daoMethodName" value="exit"/>
+				</bean>
+			</list>
+		</property>
+	</bean>
+	
+	<util:map id="cmdDescriptionMap">
+		<entry key="SHOW SCHEMAS" value="- Displays all schemas defined in your database." />
+		<entry key="USE" value="- Chooses a schema." />
+		<entry key="SHOW TABLES" value="- Displays all tables in the currently chosen schema." />
+		<entry key="CREATE SCHEMA" value="- Creates a new schema to hold tables." />
+		<entry key="CREATE TABLE" value="- Creates a new table schema, i.e. a new empty table." />
+		<entry key="INSERT INTO TABLE" value="- Inserts a row/record into a table." />
+		<entry key="DROP TABLE"
+			value="- Remove a table schema, and all of its contained data." />
+		<entry key="SELECT" value="- SELECT-FROM-WHERE style query " />
+		<entry key="EXIT"
+			value="- Cleanly exits the program and saves all table and index information in non-volatile files." />
+	</util:map>
+
+</beans>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

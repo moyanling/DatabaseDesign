@@ -12,12 +12,15 @@
 	   	http://www.springframework.org/schema/util 
 		http://www.springframework.org/schema/util/spring-util.xsd
 		">
-					   
+		
+	<import resource="SupportedCmds.xml"/>
 	<context:property-placeholder location="classpath:CliInfo.properties"/>
+	
 	
 	<bean id="clidHandler" class="org.mo39.fmbh.databasedesign.utils.CliHandler">
 		<property name="welcomeInfo" value="${welcomeInfo}"/>
 		<property name="prompt" value="${prompt}"/>
+		<property name="cmdDescriptionMap" ref="cmdDescriptionMap"/>
 	</bean>
 	
 	<!-- H2 in memory database. Initialized by jdbc script.
