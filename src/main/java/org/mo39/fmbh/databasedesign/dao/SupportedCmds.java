@@ -3,6 +3,7 @@ package org.mo39.fmbh.databasedesign.dao;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -12,11 +13,13 @@ import org.mo39.fmbh.databasedesign.dao.OperationAnnotation.SqlOperation;
 import org.mo39.fmbh.databasedesign.dao.OperationAnnotation.TableOperation;
 import org.mo39.fmbh.databasedesign.model.DatabaseDesignExceptions.MissingAnnotationException;
 import org.mo39.fmbh.databasedesign.model.Status;
+import org.mo39.fmbh.databasedesign.utils.View.Viewable;
 
-public class SupportedCmds {
+public class SupportedCmds implements Viewable {
 
   private static Cmd currCmd;
   private static List<Cmd> supportedCmdList;
+  private static Map<String, String> cmdDescriptionMap;
 
   /**
    * Check whether input string is supported. If it's supported, set the sqlStr and add to currCmd
@@ -28,7 +31,6 @@ public class SupportedCmds {
     for (Cmd cmd : supportedCmdList) {
       Pattern regx = Pattern.compile(cmd.getRegx(), Pattern.CASE_INSENSITIVE);
       Matcher matcher = regx.matcher(sql);
-      // System.out.println(sql + "|" + cmd.getRegx() + "|" + matcher.matches());
       if (matcher.matches()) {
         cmd.setSqlStr(sql);
         currCmd = cmd;
@@ -42,8 +44,9 @@ public class SupportedCmds {
     if (currCmd == null) {
       throw new IllegalStateException("Please check whether cmd is supported first.");
     }
+    Status.INSTANCE.setCurrentSql(currCmd.getSqlStr());
     try {
-      Status.INSTANCE.setCurrentSql(currCmd.getSqlStr());
+      
       Method method = DatabaseDao.class.getMethod(currCmd.getDaoMethodName());
       CheckAnnotation(method);
       method.invoke(DatabaseDaoImpl.INSTANCE);
@@ -92,6 +95,19 @@ public class SupportedCmds {
     } else {
       throw new MissingAnnotationException("No annotation is found on dao method.");
     }
+  }
+  
+  @Override
+  public String getCliView() {
+    StringBuilder sb = new StringBuilder("Supported commands: \n");
+    for (Object key : cmdDescriptionMap.keySet()) {
+      sb.append("\t" + key + ": \n\t\t" + cmdDescriptionMap.get(key) + "\n\n");
+    }
+    return sb.toString();
+  }  
+  
+  public void setCmdDescriptionMap(Map<String, String> cmdDescriptionMap) {
+    SupportedCmds.cmdDescriptionMap = cmdDescriptionMap;
   }
 
   public void setSupportedCmdList(List<Cmd> supportedCmdList) {

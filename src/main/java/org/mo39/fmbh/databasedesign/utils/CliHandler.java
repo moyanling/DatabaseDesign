@@ -1,6 +1,5 @@
 package org.mo39.fmbh.databasedesign.utils;
 
-import java.util.Map;
 import java.util.Scanner;
 
 import org.mo39.fmbh.databasedesign.dao.SupportedCmds;
@@ -9,15 +8,12 @@ public class CliHandler {
 
   private static String prompt;
   private static String welcomeInfo;
-  private static Map<String, String> cmdDescriptionMap;
+  
 
   private static Scanner scan = new Scanner(System.in);
 
   public static void showCommandList() {
-    print("Supported commands: \n");
-    for (Object key : cmdDescriptionMap.keySet()) {
-      print("\t" + key + ": \n\t\t" + cmdDescriptionMap.get(key) + "\n\n");
-    }
+    new View(SupportedCmds.class);
   }
 
   public static void welcomeToDb() {
@@ -51,10 +47,6 @@ public class CliHandler {
 
   public void setPrompt(String prompt) {
     CliHandler.prompt = prompt;
-  }
-
-  public void setCmdDescriptionMap(Map<String, String> cmdDescriptionMap) {
-    CliHandler.cmdDescriptionMap = cmdDescriptionMap;
   }
 
   private static void print(Object obj) {
