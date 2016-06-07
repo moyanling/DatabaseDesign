@@ -80,7 +80,7 @@ public class DatabaseDesign {
     this.prompt = prompt;
   }
 
-  public void setWelcomInfo(String welcomeInfo) {
+  public void setWelcomeInfo(String welcomeInfo) {
     this.welcomeInfo = welcomeInfo;
   }
 

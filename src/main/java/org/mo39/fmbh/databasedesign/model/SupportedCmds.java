@@ -99,7 +99,7 @@ public class SupportedCmds implements Viewable {
     } else if ((annotation = method.getAnnotation(ExitOperation.class)) != null) {
       // -------------------------------------------------
     } else {
-      throw new MissingAnnotationException("No annotation is found on dao method.");
+      throw new MissingAnnotationException("No annotation is found on execute method.");
     }
   }
 
