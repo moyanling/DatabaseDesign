@@ -2,53 +2,69 @@ package org.mo39.fmbh.databasedesign.framework;
 
 /**
  * This presents the current status of database. Includes but not limited to the schema, table and
- * SQL currently using. Singleton is employed for further possible implement on multi-threads.
+ * SQL currently using. The class is run in threads. In a single thread, it should not be create
+ * twice. When the first time getInstance is called, it could create a new instance will null values
+ * in its fields. Otherwise return the already existed instance.
  *
  * @author Jihan Chen
  *
  */
-public enum Status {
+public class Status {
 
-  INSTANCE;
+  private Status() {
+    count++;
+  }
 
-  private String currentSql;
+  private String currentCmd;
   private String currentTable;
   private String currentSchema;
 
-  public void endSql() {
-    currentSql = null;
+  private static Status holder;
+  private static int count = 0;
+
+  public static Status getInstance() {
+    if (count == 0) {
+      holder = new Status();
+      return holder;
+    } else {
+      return holder;
+    }
+  }
+
+  public void endRunCmd() {
+    holder.currentCmd = null;
   }
 
   public boolean hasActiveTable() {
-    return currentTable == null;
+    return holder.currentTable == null;
   }
 
   public boolean hasActiveSchema() {
-    return currentSchema == null;
+    return holder.currentSchema == null;
   }
 
-  public String getCurrentSql() {
-    return currentSql;
+  public String getCurrentCmd() {
+    return holder.currentCmd;
   }
 
-  public void setCurrentSql(String currentSql) {
-    this.currentSql = currentSql;
+  public void setCurrentCmd(String currentSql) {
+    holder.currentCmd = currentSql;
   }
 
   public String getCurrentTable() {
-    return currentTable;
+    return holder.currentTable;
   }
 
   public void setCurrentTable(String currentTable) {
-    this.currentTable = currentTable;
+    holder.currentTable = currentTable;
   }
 
   public String getCurrentSchema() {
-    return currentSchema;
+    return holder.currentSchema;
   }
 
   public void setCurrentSchema(String currentSchema) {
-    this.currentSchema = currentSchema;
+    holder.currentSchema = currentSchema;
   }
 
 }

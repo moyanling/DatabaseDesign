@@ -12,14 +12,21 @@ import org.springframework.util.Assert;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:applicationContext.xml")
 public class TestRegularExpression {
-  
+
   @Test
   public void testUse(){
+    Pattern regx;
+    Matcher matcher;
+
     Assert.isTrue("USE S;".matches("^USE.*?\\;$"));
-    Pattern regx = Pattern.compile("^USE.*?\\;$", Pattern.CASE_INSENSITIVE);
-    Matcher matcher = regx.matcher("use S;");
+    regx = Pattern.compile("^USE.*?\\;$", Pattern.CASE_INSENSITIVE);
+    matcher = regx.matcher("use S;");
     Assert.isTrue(matcher.matches());
-    
+
+    regx = Pattern.compile("^EXIT(.*?)\\;$", Pattern.CASE_INSENSITIVE);
+    matcher = regx.matcher("exit adjkls;");
+    Assert.isTrue(matcher.matches());
+    System.out.println(matcher.group(1));
   }
 
 }

@@ -1,5 +1,7 @@
 package org.mo39.fmbh.databasedesign.framework;
 
+import static org.mo39.fmbh.databasedesign.framework.View.newView;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -11,7 +13,9 @@ import org.mo39.fmbh.databasedesign.executor.Executable.ExitOperation;
 import org.mo39.fmbh.databasedesign.executor.Executable.SchemaOperation;
 import org.mo39.fmbh.databasedesign.executor.Executable.SqlOperation;
 import org.mo39.fmbh.databasedesign.executor.Executable.TableOperation;
+import org.mo39.fmbh.databasedesign.framework.DatabaseDesignExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.framework.DatabaseDesignExceptions.MissingAnnotationException;
+import org.mo39.fmbh.databasedesign.framework.View.CliView;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
 
 public class SupportedCmds implements Viewable {
@@ -32,7 +36,7 @@ public class SupportedCmds implements Viewable {
       Pattern regx = Pattern.compile(cmd.getRegx(), Pattern.CASE_INSENSITIVE);
       Matcher matcher = regx.matcher(arg);
       if (matcher.matches()) {
-        cmd.setSqlStr(arg);
+        cmd.setCmdStr(arg);
         currCmd = cmd;
         return true;
       }
@@ -44,51 +48,55 @@ public class SupportedCmds implements Viewable {
     if (currCmd == null) {
       throw new IllegalStateException("Please check whether cmd is supported first.");
     }
-    Status.INSTANCE.setCurrentSql(currCmd.getSqlStr());
+    Status.getInstance().setCurrentCmd(currCmd.getCmdStr());
     try {
       Class<?> klass = Class.forName(currCmd.getExecutorClassName());
       if (Executable.class.isAssignableFrom(klass)) {
         Executable executor = Executable.class.cast(klass.newInstance());
         Method method = executor.getClass().getMethod("execute");
-        CheckAnnotation(method);
+        checkExecuteMethodAnnotation(method);
         method.invoke(executor);
         if (executor instanceof Viewable) {
-          currCmd = null;
-          View.newView(Viewable.class.cast(executor));
+          newView(Viewable.class.cast(executor));
         }
       }
     } catch (Exception e) {
-      e.printStackTrace();
+      Throwable ex;
+      if ((ex = e.getCause()) instanceof BadUsageException) {
+        newView("Bad usage for command " + currCmd.name + ex.getMessage() == null ? ". "
+            : ex.getMessage());
+      } else {
+        e.printStackTrace();
+      }
     }
+    currCmd = null;
+    Status.getInstance().endRunCmd();
   }
 
   /**
    * Check some constraints according to Annotation. If check fails, an IllegalStateException is
-   * thrown. Not all annotations have constraints And all methods in dao must be annotated. If the
-   * method is a SqlOperation, the currentSql in Status will be injected.
+   * thrown. Not all annotations have constraints And all execute methods must be annotated.
    *
    * @param method
    */
-  private void CheckAnnotation(Method method) {
+  private void checkExecuteMethodAnnotation(Method method) {
     Annotation annotation = null;
     if ((annotation = method.getAnnotation(SqlOperation.class)) != null) {
       SqlOperation sqlAnnotation = SqlOperation.class.cast(annotation);
       if (sqlAnnotation.requireActiveSchema() == true) {
-        if (!Status.INSTANCE.hasActiveSchema()) {
+        if (!Status.getInstance().hasActiveSchema()) {
           throw new IllegalStateException("No schema is found on sql operation.");
         }
       }
       if (sqlAnnotation.requireActiveTable() == true) {
-        if (!Status.INSTANCE.hasActiveTable()) {
+        if (!Status.getInstance().hasActiveTable()) {
           throw new IllegalStateException("No table is found on sql operation.");
         }
       }
-      Status.INSTANCE.setCurrentSql(currCmd.getSqlStr());
-      // -------------------------------------------------
     } else if ((annotation = method.getAnnotation(TableOperation.class)) != null) {
       TableOperation tableAnnotation = TableOperation.class.cast(annotation);
       if (tableAnnotation.requiresActiveSchema() == true) {
-        if (!Status.INSTANCE.hasActiveSchema()) {
+        if (!Status.getInstance().hasActiveSchema()) {
           throw new IllegalStateException("No schema is found on table operation.");
         }
       }
@@ -103,11 +111,15 @@ public class SupportedCmds implements Viewable {
   }
 
   @Override
+  @CliView
   public String getView() {
     StringBuilder sb = new StringBuilder("Supported commands: \n\n");
     for (Cmd cmd : supportedCmdList) {
       sb.append("\t" + cmd.getName() + ": \n\t\t" + cmd.getDescription() + "\n\n");
     }
+    sb.append("NOTE:\n\tPlease use only letter, number and underscore and "
+        + "start with letter for naming conventions. \n\tOtherwise the "
+        + "command will be consider a bad usage and won't be accepted.");
     return sb.toString();
   }
 
@@ -117,26 +129,26 @@ public class SupportedCmds implements Viewable {
   }
 
   /**
-   * Command class. The regx and daoMethodName is injected by applicationContext. String sql should
-   * not be injected. It should be set when the input matches regx.
+   * Command class. The regx and executorClassName is injected by applicationContext. String sql
+   * should not be injected. It should be set when the input matches regx.
    *
    * @author Jihan Chen
    *
    */
   public static class Cmd {
 
-    private String sql;
+    private String cmd;
     private String name;
     private String regx;
     private String description;
     private String executorClassName;
 
-    public String getSqlStr() {
-      return sql;
+    public String getCmdStr() {
+      return cmd;
     }
 
-    public void setSqlStr(String sqlStr) {
-      sql = sqlStr;
+    public void setCmdStr(String sqlStr) {
+      cmd = sqlStr;
     }
 
     public String getRegx() {
