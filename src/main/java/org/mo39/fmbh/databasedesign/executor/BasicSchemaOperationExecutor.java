@@ -1,7 +1,8 @@
 package org.mo39.fmbh.databasedesign.executor;
 
-import org.mo39.fmbh.databasedesign.model.Status;
-import org.mo39.fmbh.databasedesign.view.View.Viewable;
+import org.mo39.fmbh.databasedesign.framework.Status;
+import org.mo39.fmbh.databasedesign.framework.View.CliView;
+import org.mo39.fmbh.databasedesign.framework.View.Viewable;
 
 public abstract class BasicSchemaOperationExecutor {
 
@@ -12,8 +13,9 @@ public abstract class BasicSchemaOperationExecutor {
     public void execute() {}
 
     @Override
+    @CliView
     public String getView() {
-      return "showSchemas" + Status.INSTANCE.getCurrentSql();
+      return "showSchemas";
     }
 
   }
@@ -22,11 +24,15 @@ public abstract class BasicSchemaOperationExecutor {
 
     @Override
     @SchemaOperation
-    public void execute() {}
+    public void execute() {
+      Status.INSTANCE.setCurrentSchema("My_schema");
+
+    }
 
     @Override
+    @CliView
     public String getView() {
-      return "use: " + Status.INSTANCE.getCurrentSql();
+      return Status.INSTANCE.getCurrentSchema();
     }
   }
 
@@ -37,8 +43,12 @@ public abstract class BasicSchemaOperationExecutor {
     public void execute() {}
 
     @Override
+    @CliView
     public String getView() {
-      return "createSchema" + Status.INSTANCE.getCurrentSql();
+      return Status.INSTANCE.getCurrentSchema();
     }
   }
+
 }
+
+

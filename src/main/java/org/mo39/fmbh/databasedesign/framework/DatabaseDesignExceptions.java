@@ -1,8 +1,8 @@
-package org.mo39.fmbh.databasedesign.model;
+package org.mo39.fmbh.databasedesign.framework;
 
 public abstract class DatabaseDesignExceptions {
 
-  public static class MissingAnnotationException extends RuntimeException {
+  public static class MissingAnnotationException extends Error {
 
     /**
      * 

@@ -1,4 +1,4 @@
-package org.mo39.fmbh.databasedesign.model;
+package org.mo39.fmbh.databasedesign.framework;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -11,9 +11,8 @@ import org.mo39.fmbh.databasedesign.executor.Executable.ExitOperation;
 import org.mo39.fmbh.databasedesign.executor.Executable.SchemaOperation;
 import org.mo39.fmbh.databasedesign.executor.Executable.SqlOperation;
 import org.mo39.fmbh.databasedesign.executor.Executable.TableOperation;
-import org.mo39.fmbh.databasedesign.model.DatabaseDesignExceptions.MissingAnnotationException;
-import org.mo39.fmbh.databasedesign.view.View;
-import org.mo39.fmbh.databasedesign.view.View.Viewable;
+import org.mo39.fmbh.databasedesign.framework.DatabaseDesignExceptions.MissingAnnotationException;
+import org.mo39.fmbh.databasedesign.framework.View.Viewable;
 
 public class SupportedCmds implements Viewable {
 

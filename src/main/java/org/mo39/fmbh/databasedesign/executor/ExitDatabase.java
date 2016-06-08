@@ -1,7 +1,7 @@
 package org.mo39.fmbh.databasedesign.executor;
 
-import org.mo39.fmbh.databasedesign.view.View;
-import org.mo39.fmbh.databasedesign.view.View.Viewable;
+import org.mo39.fmbh.databasedesign.framework.View;
+import org.mo39.fmbh.databasedesign.framework.View.Viewable;
 
 public class ExitDatabase implements Executable, Viewable {
 

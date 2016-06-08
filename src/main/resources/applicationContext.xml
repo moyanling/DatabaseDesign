@@ -17,7 +17,7 @@
 	<context:property-placeholder location="classpath:InfoStrings.properties"/>
 	<context:component-scan base-package="org.mo39.fmbh.databasedesign.test" />
 
-	<bean id="databaseDesign" class="org.mo39.fmbh.databasedesign.test.DatabaseDesign">
+	<bean id="databaseDesign" class="org.mo39.fmbh.databasedesign.framework.DatabaseDesign">
 		<property name="prompt" value="${prompt}"/>
 		<property name="welcomeInfo" value="${welcomeInfo}"/>
 	</bean>

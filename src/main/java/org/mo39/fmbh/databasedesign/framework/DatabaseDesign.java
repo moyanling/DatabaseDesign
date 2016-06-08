@@ -1,4 +1,4 @@
-package org.mo39.fmbh.databasedesign.test;
+package org.mo39.fmbh.databasedesign.framework;
 
 import java.util.Scanner;
 
@@ -10,8 +10,6 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.mo39.fmbh.databasedesign.model.SupportedCmds;
-import org.mo39.fmbh.databasedesign.view.View;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 

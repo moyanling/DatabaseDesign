@@ -1,4 +1,4 @@
-package org.mo39.fmbh.databasedesign.model;
+package org.mo39.fmbh.databasedesign.framework;
 
 /**
  * This presents the current status of database. Includes but not limited to the schema, table and
