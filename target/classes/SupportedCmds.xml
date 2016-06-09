@@ -23,7 +23,7 @@
 					<property name="description" value="- Displays all schemas defined in your database." />
 					<property name="executorClassName" value="org.mo39.fmbh.databasedesign.executor.BasicSchemaOperationExecutor$ShowSchemas" />
 				</bean>
-				<!-- "^USE\\s*?([a-zA-Z][a-zA-Z0-9]*?)\\s*?\\;$" -->
+				
 				<bean id="use" class="org.mo39.fmbh.databasedesign.framework.SupportedCmds$Cmd">
 					<property name="name" value="USE" />
 					<property name="regx" value="^USE.*?\;$" />

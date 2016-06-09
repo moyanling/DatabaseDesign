@@ -118,8 +118,8 @@ public class SupportedCmds implements Viewable {
       sb.append("\t" + cmd.getName() + ": \n\t\t" + cmd.getDescription() + "\n\n");
     }
     sb.append("NOTE:\n\tPlease use only letter, number and underscore and "
-        + "start with letter for naming conventions. \n\tOtherwise the "
-        + "command will be consider a bad usage and won't be accepted.");
+              + "start with letter for naming conventions. \n\tOtherwise the "
+              + "command will be consider a bad usage and won't be accepted.");
     return sb.toString();
   }
 
