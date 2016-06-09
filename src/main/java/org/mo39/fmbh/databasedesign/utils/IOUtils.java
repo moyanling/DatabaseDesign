@@ -1,5 +1,8 @@
 package org.mo39.fmbh.databasedesign.utils;
 
+import static org.mo39.fmbh.databasedesign.utils.NamingUtils.inferSchemaFromtbl;
+import static org.mo39.fmbh.databasedesign.utils.NamingUtils.inferTableFromtbl;
+
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
@@ -26,7 +29,17 @@ public class IOUtils {
   public static Set<String> getSchemas() {
     Set<String> set = Sets.newHashSet();
     for (String tbl : gettblFileList()) {
-      set.add(NamingUtils.inferSchemaFromtbl(tbl));
+      set.add(inferSchemaFromtbl(tbl));
+    }
+    return Collections.unmodifiableSet(set);
+  }
+
+  public static Set<String> getTables(String schemaName) {
+    Set<String> set = Sets.newHashSet();
+    for (String tbl : gettblFileList()) {
+      if (schemaName.equals(inferSchemaFromtbl(tbl))) {
+        set.add(inferTableFromtbl(tbl));
+      }
     }
     return Collections.unmodifiableSet(set);
   }

@@ -10,8 +10,9 @@ import java.util.regex.Pattern;
 
 import org.mo39.fmbh.databasedesign.executor.Executable;
 import org.mo39.fmbh.databasedesign.executor.Executable.ExitOperation;
+import org.mo39.fmbh.databasedesign.executor.Executable.IsReadOnly;
+import org.mo39.fmbh.databasedesign.executor.Executable.RecordOperation;
 import org.mo39.fmbh.databasedesign.executor.Executable.SchemaOperation;
-import org.mo39.fmbh.databasedesign.executor.Executable.SqlOperation;
 import org.mo39.fmbh.databasedesign.executor.Executable.TableOperation;
 import org.mo39.fmbh.databasedesign.framework.DatabaseDesignExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.framework.DatabaseDesignExceptions.MissingAnnotationException;
@@ -54,10 +55,17 @@ public class SupportedCmds implements Viewable {
       if (Executable.class.isAssignableFrom(klass)) {
         Executable executor = Executable.class.cast(klass.newInstance());
         Method method = executor.getClass().getMethod("execute");
-        checkExecuteMethodAnnotation(method);
+        checkOperationAnnotation(method);
+        boolean isReadOnly = checkReadOnlyAnnotation(method);
+        if (!isReadOnly) {
+          // TODO Need acquire a lock first.
+        }
         method.invoke(executor);
         if (executor instanceof Viewable) {
           newView(Viewable.class.cast(executor));
+        }
+        if (!isReadOnly) {
+          // TODO Release the lock.
         }
       }
     } catch (Exception e) {
@@ -78,21 +86,21 @@ public class SupportedCmds implements Viewable {
   }
 
   /**
-   * Check some constraints according to Annotation. If check fails, an IllegalStateException is
-   * thrown. Not all annotations have constraints And all execute methods must be annotated.
+   * Check some state constraints according to Annotation. If check fails, an IllegalStateException
+   * is thrown. Not all annotations have constraints And all execute methods must be annotated.
    *
    * @param method
    */
-  private void checkExecuteMethodAnnotation(Method method) {
+  private void checkOperationAnnotation(Method method) {
     Annotation annotation = null;
-    if ((annotation = method.getAnnotation(SqlOperation.class)) != null) {
-      SqlOperation sqlAnnotation = SqlOperation.class.cast(annotation);
-      if (sqlAnnotation.requireActiveSchema() == true) {
+    if ((annotation = method.getAnnotation(RecordOperation.class)) != null) {
+      RecordOperation record = RecordOperation.class.cast(annotation);
+      if (record.requireActiveSchema() == true) {
         if (!Status.getInstance().hasActiveSchema()) {
           throw new IllegalStateException("No schema is found on sql operation.");
         }
       }
-      if (sqlAnnotation.requireActiveTable() == true) {
+      if (record.requireActiveTable() == true) {
         if (!Status.getInstance().hasActiveTable()) {
           throw new IllegalStateException("No table is found on sql operation.");
         }
@@ -110,7 +118,16 @@ public class SupportedCmds implements Viewable {
     } else if ((annotation = method.getAnnotation(ExitOperation.class)) != null) {
       // -------------------------------------------------
     } else {
-      throw new MissingAnnotationException("No annotation is found on execute method.");
+      throw new MissingAnnotationException("No operation annotation is found on execute method.");
+    }
+  }
+
+  private boolean checkReadOnlyAnnotation(Method method) {
+    Annotation annotation = null;
+    if ((annotation = method.getAnnotation(IsReadOnly.class)) != null) {
+      return IsReadOnly.class.cast(annotation).value();
+    } else {
+      throw new MissingAnnotationException("No IsReadOnly is found on execute method.");
     }
   }
 

@@ -82,7 +82,7 @@ public abstract class BasicSchemaOperationExecutor {
         if (schemaSet.contains(schemaName)) {
           endMessage = "Schema - '" + schemaName + "' already exists.";
         } else {
-          Status.getInstance().setCurrentSchema(schemaName);;
+          Status.getInstance().setCurrentSchema(schemaName);
           endMessage = "Schema - '" + schemaName
               + "' is activated. Create at least one table to save this schema.";
         }
