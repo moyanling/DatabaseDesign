@@ -63,10 +63,14 @@ public class SupportedCmds implements Viewable {
     } catch (Exception e) {
       Throwable ex;
       if ((ex = e.getCause()) instanceof BadUsageException) {
-        newView("Bad usage for command " + currCmd.name + ex.getMessage() == null ? ". "
-            : ex.getMessage());
+        String message = ex.getMessage();
+        if (message == null) {
+          message = "";
+        }
+        newView("Bad usage for command " + currCmd.name + ". " + message);
       } else {
         e.printStackTrace();
+        throw new Error();
       }
     }
     currCmd = null;
@@ -118,8 +122,8 @@ public class SupportedCmds implements Viewable {
       sb.append("\t" + cmd.getName() + ": \n\t\t" + cmd.getDescription() + "\n\n");
     }
     sb.append("NOTE:\n\tPlease use only letter, number and underscore and "
-              + "start with letter for naming conventions. \n\tOtherwise the "
-              + "command will be consider a bad usage and won't be accepted.");
+        + "start with letter for naming conventions. \n\tOtherwise the "
+        + "command will be consider a bad usage and won't be accepted.");
     return sb.toString();
   }
 

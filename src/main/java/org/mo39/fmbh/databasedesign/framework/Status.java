@@ -2,69 +2,67 @@ package org.mo39.fmbh.databasedesign.framework;
 
 /**
  * This presents the current status of database. Includes but not limited to the schema, table and
- * SQL currently using. The class is run in threads. In a single thread, it should not be create
- * twice. When the first time getInstance is called, it could create a new instance will null values
- * in its fields. Otherwise return the already existed instance.
+ * SQL currently using. The class is run in threads and should have a thread local copy per thread.
  *
  * @author Jihan Chen
  *
  */
 public class Status {
 
-  private Status() {
-    count++;
-  }
+  private Status() {}
 
   private String currentCmd;
   private String currentTable;
   private String currentSchema;
 
-  private static Status holder;
-  private static int count = 0;
+  private static ThreadLocal<Status> holder = ThreadLocal.<Status>withInitial(() -> {
+    return new Status();
+  });
 
   public static Status getInstance() {
-    if (count == 0) {
-      holder = new Status();
-      return holder;
-    } else {
-      return holder;
-    }
-  }
-
-  public void endRunCmd() {
-    holder.currentCmd = null;
+    return holder.get();
+    // TODO Try to implement your own thread local instance here.
+    // return null;
   }
 
   public boolean hasActiveTable() {
-    return holder.currentTable == null;
+    return currentTable == null;
   }
 
   public boolean hasActiveSchema() {
-    return holder.currentSchema == null;
+    return currentSchema == null;
   }
 
   public String getCurrentCmd() {
-    return holder.currentCmd;
+    return currentCmd;
   }
 
-  public void setCurrentCmd(String currentSql) {
-    holder.currentCmd = currentSql;
+  public void setCurrentCmd(String currentCmd) {
+    this.currentCmd = currentCmd;
   }
 
   public String getCurrentTable() {
-    return holder.currentTable;
+    return currentTable;
   }
 
   public void setCurrentTable(String currentTable) {
-    holder.currentTable = currentTable;
+    this.currentTable = currentTable;
   }
 
   public String getCurrentSchema() {
-    return holder.currentSchema;
+    return currentSchema;
   }
 
   public void setCurrentSchema(String currentSchema) {
-    holder.currentSchema = currentSchema;
+    this.currentSchema = currentSchema;
+  }
+
+  /**
+   * When the command run is finished, the currentCmd field is set back to null. This is called only
+   * in framework.SupportedCmds after the execution of cmd.
+   */
+  protected void endRunCmd() {
+    currentCmd = null;
   }
 
 }
