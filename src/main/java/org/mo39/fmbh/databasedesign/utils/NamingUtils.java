@@ -1,5 +1,6 @@
 package org.mo39.fmbh.databasedesign.utils;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -48,8 +49,8 @@ public abstract class NamingUtils {
   /**
    * This function uses a regular expression to check the input name. The name could be schema,
    * table or column name. This should be used when the name is read from the archive other than
-   * input by the user. When the name is an input from the user, use
-   * {@link checkNamingConventions} instead.
+   * input by the user. When the name is an input from the user, use {@link checkNamingConventions}
+   * instead.
    * <p>
    * By doing so, the input would follow the conventions so there should be no invalid name in
    * archive after saving the users' input. In other words, a input name not following a naming
@@ -104,6 +105,12 @@ public abstract class NamingUtils {
     return null;
   }
 
+  /**
+   * Decompose the name of schema and table from a tbl file.
+   *
+   * @param tableFileName
+   * @return A unmodifiable map that contains schema and table. {@link Collections.unmodifiableMap}
+   */
   public static Map<String, String> decomposeTableFileName(String tableFileName) {
     if ((matcher = TBL_FILE_NAMING_CONSTRAINT.matcher(tableFileName)).matches()) {
       Map<String, String> toRet = Maps.newHashMap();
@@ -111,13 +118,20 @@ public abstract class NamingUtils {
         toRet.put("schema", group);
         if (checkNamingConventionsWithException(group = matcher.group(2))) {
           toRet.put("table", group);
-          return toRet;
+          return Collections.unmodifiableMap(toRet);
         }
       }
     }
     return null;
   }
 
+  /**
+   * Decompose the name of schema ,table and column name from a ndx file.
+   *
+   * @param indexFileName
+   * @return A unmodifiable map that contains schema, table and column.
+   *         {@link Collections.unmodifiableMap}
+   */
   public static Map<String, String> decomposeIndexFileName(String indexFileName) {
     if ((matcher = NDX_FILE_NAMING_CONSTRAINT.matcher(indexFileName)).matches()) {
       Map<String, String> toRet = Maps.newHashMap();
