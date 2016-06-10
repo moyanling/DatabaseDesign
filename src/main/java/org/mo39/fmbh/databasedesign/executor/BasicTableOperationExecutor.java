@@ -38,10 +38,49 @@ public abstract class BasicTableOperationExecutor {
 
   }
 
+  public static class DropTable implements Executable, Viewable {
+
+    private static String endMessage;
+    private static final String REGEX = "^DROP\\s*?TABLE(.*?)\\;$";
+
+
+    @Override
+    @CliView
+    public String getView() {
+      return endMessage;
+    }
+
+    @Override
+    @TableOperation
+    @IsReadOnly(value = false)
+    public void execute() {
+      String tableName = extractAndCheckName(Status.getInstance().getCurrentCmd(), REGEX, 1);
+      if (tableName == null) {
+        throw new BadUsageException();
+      }
+      String schemaName = Status.getInstance().getCurrentSchema();
+      Set<String> tableSet = IOUtils.getTables(schemaName);
+      if (tableSet.contains(tableName)) {
+        if (IOUtils.deleteTable(schemaName, tableName)) {
+          endMessage = "Table - '" + tableName + "' in schema -'" + schemaName + "' is deleted.";
+        } else {
+          endMessage =
+              "Fails to delete Table - '" + tableName + "' in schema -'" + schemaName + "'";
+        }
+      } else {
+        endMessage = "The table does not exist in current schema - '"
+            + Status.getInstance().getCurrentSchema() + "'.";
+      }
+
+    }
+
+  }
+
+
   public static class CreateTable implements Executable, Viewable {
 
     private static String endMessage;
-    private static final String REGEX = "^CREATE\\s*?TABLE(.*?)\\;$";
+    // private static final String REGEX = "^CREATE\\s*?TABLE(.*?)\\;$";
 
     @Override
     @CliView
@@ -53,37 +92,6 @@ public abstract class BasicTableOperationExecutor {
     @TableOperation
     public void execute() {
       // TODO
-
-    }
-
-  }
-
-
-
-  public static class DropTable implements Executable, Viewable {
-
-    private static String endMessage;
-    private static final String REGEX = "^DROP\\s*?TABLE(.*?)\\;$";
-
-
-    @Override
-    @CliView
-    public String getView() {
-      // TODO Auto-generated method stub
-      return endMessage;
-    }
-
-    @Override
-    @TableOperation
-    public void execute() {
-      String tableName = extractAndCheckName(Status.getInstance().getCurrentCmd(), REGEX, 1);
-      if (tableName == null) {
-        throw new BadUsageException();
-      }
-      Set<String> tableSet = IOUtils.getTables(Status.getInstance().getCurrentSchema());
-      if (tableSet.contains(tableName)) {
-        // TODO IOUtils.deleteTable();
-      }
 
     }
 

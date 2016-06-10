@@ -109,6 +109,7 @@ public class SupportedCmds implements Viewable {
       TableOperation tableAnnotation = TableOperation.class.cast(annotation);
       if (tableAnnotation.requiresActiveSchema() == true) {
         if (!Status.getInstance().hasActiveSchema()) {
+          System.err.println(Status.getInstance().getCurrentSchema());
           throw new IllegalStateException("No schema is found on table operation.");
         }
       }
@@ -127,7 +128,8 @@ public class SupportedCmds implements Viewable {
     if ((annotation = method.getAnnotation(IsReadOnly.class)) != null) {
       return IsReadOnly.class.cast(annotation).value();
     } else {
-      throw new MissingAnnotationException("No IsReadOnly is found on execute method.");
+      return false;
+      // throw new MissingAnnotationException("No IsReadOnly is found on execute method.");
     }
   }
 
@@ -138,8 +140,8 @@ public class SupportedCmds implements Viewable {
     for (Cmd cmd : supportedCmdList) {
       sb.append("\t" + cmd.getName() + ": \n\t\t" + cmd.getDescription() + "\n\n");
     }
-    sb.append("NOTE:\n\tPlease use only letter, number and underscore and "
-        + "start with letter for naming conventions. \n\tOtherwise the "
+    sb.append("NOTE:\n\tPlease use letter, number, underscore and dash only. And please start with "
+        + "letter and don't end with underscore or dash for naming conventions. \n\tOtherwise the "
         + "command will be consider a bad usage and won't be accepted.");
     return sb.toString();
   }
@@ -156,7 +158,7 @@ public class SupportedCmds implements Viewable {
    * @author Jihan Chen
    *
    */
-  public static class Cmd {
+  private static class Cmd {
 
     private String cmd;
     private String name;
@@ -176,6 +178,7 @@ public class SupportedCmds implements Viewable {
       return regx;
     }
 
+    @SuppressWarnings("unused")
     public void setRegx(String regx) {
       this.regx = regx;
     }
@@ -184,6 +187,7 @@ public class SupportedCmds implements Viewable {
       return description;
     }
 
+    @SuppressWarnings("unused")
     public void setDescription(String description) {
       this.description = description;
     }
@@ -192,6 +196,7 @@ public class SupportedCmds implements Viewable {
       return name;
     }
 
+    @SuppressWarnings("unused")
     public void setName(String name) {
       this.name = name;
     }
@@ -200,6 +205,7 @@ public class SupportedCmds implements Viewable {
       return executorClassName;
     }
 
+    @SuppressWarnings("unused")
     public void setExecutorClassName(String executorClassName) {
       this.executorClassName = executorClassName;
     }

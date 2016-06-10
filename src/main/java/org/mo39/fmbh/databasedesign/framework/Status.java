@@ -26,11 +26,11 @@ public class Status {
   }
 
   public boolean hasActiveTable() {
-    return currentTable == null;
+    return currentTable != null;
   }
 
   public boolean hasActiveSchema() {
-    return currentSchema == null;
+    return currentSchema != null;
   }
 
   public String getCurrentCmd() {

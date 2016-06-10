@@ -4,6 +4,8 @@ import static org.mo39.fmbh.databasedesign.utils.NamingUtils.inferSchemaFromtbl;
 import static org.mo39.fmbh.databasedesign.utils.NamingUtils.inferTableFromtbl;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -24,6 +26,12 @@ public class IOUtils {
 
   public static List<String> getndxFileList() {
     return getFileList(NDX_FILE);
+  }
+
+  public static boolean deleteTable(String schemaName, String tableName) {
+    String fileName = schemaName + "." + tableName + ".tbl";
+    Path path = Paths.get(ARCHIVE_ROOT, fileName);
+    return path.toFile().delete();
   }
 
   public static Set<String> getSchemas() {

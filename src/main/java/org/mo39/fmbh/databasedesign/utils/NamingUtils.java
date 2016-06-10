@@ -49,7 +49,7 @@ public abstract class NamingUtils {
    * This function uses a regular expression to check the input name. The name could be schema,
    * table or column name. This should be used when the name is read from the archive other than
    * input by the user. When the name is an input from the user, use
-   * {@link checkNamingConventionsWithException} instead.
+   * {@link checkNamingConventions} instead.
    * <p>
    * By doing so, the input would follow the conventions so there should be no invalid name in
    * archive after saving the users' input. In other words, a input name not following a naming
