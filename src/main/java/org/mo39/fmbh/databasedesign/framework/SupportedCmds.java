@@ -2,10 +2,15 @@ package org.mo39.fmbh.databasedesign.framework;
 
 import static org.mo39.fmbh.databasedesign.framework.View.newView;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.annotation.Resource;
 
 import org.mo39.fmbh.databasedesign.executor.Executable;
 import org.mo39.fmbh.databasedesign.executor.Executable.IsReadOnly;
@@ -15,16 +20,23 @@ import org.mo39.fmbh.databasedesign.framework.View.Viewable;
 
 public class SupportedCmds implements Viewable {
 
-  public SupportedCmds() {}
+  public SupportedCmds(String usageInstruction) {
+    this.usageInstruction = usageInstruction;
+  }
 
-  private Cmd currCmd;
+  @Resource(name = "supportedCmdList")
   private List<Cmd> supportedCmdList;
 
+  private Cmd currCmd;
+  private String usageInstruction;
+  private ReadWriteLock rwLock = new ReentrantReadWriteLock();
+
   /**
-   * Check whether input string is supported. If it's supported, set the sqlStr and add to currCmd
+   * Check whether input string is supported. If returns true, {@link SupportedCmds#runCmd} can be
+   * called.
    *
-   * @param sql
-   * @return
+   * @param arg
+   * @return Returns true if supports. Otherwise false.
    */
   public boolean supports(String arg) {
     for (Cmd cmd : supportedCmdList) {
@@ -45,12 +57,12 @@ public class SupportedCmds implements Viewable {
    * called and returns true.
    * <p>
    * The method provides several features:<br>
-   * &emsp;- check state according to annotation. {@link RequiresActiveSchema}<br>
-   * &emsp;- check if execute method is read only operation. {@link IsReadOnly}<br>
+   * &emsp;- check state according to annotation {@link RequiresActiveSchema}<br>
+   * &emsp;- check if execute method is read only operation according to annotation {@link IsReadOnly}<br>
    * &emsp;- view result according to Viewable interface (if implemented) right after the execution
    * finishes<br>
-   * &emsp;- catch certain execeptions, display the message and consider the execution a failure (in which
-   * case the Viewable result will not be displayed).<br>
+   * &emsp;- catch certain execeptions, display the message and consider the execution a failure (in
+   * which case the Viewable result will not be displayed).<br>
    *
    */
   public void runCmd() {
@@ -64,52 +76,39 @@ public class SupportedCmds implements Viewable {
         Executable executor = Executable.class.cast(klass.newInstance());
         Method method = executor.getClass().getMethod("execute");
         checkOperationAnnotation(method);
-        boolean isReadOnly = checkReadOnlyAnnotation(method);
-        if (!isReadOnly) {
-          // TODO Need acquire a lock first.
+        invokeCmd(method, executor, checkReadOnlyAnnotation(method));
+      }
+    } catch (IllegalStateException e) {
+      String message = e.getMessage();
+      if (message == null) {
+        message = "";
+      }
+      newView("Illegal state. " + message);
+    } catch (InvocationTargetException e) {
+      Throwable ex;
+      if ((ex = e.getCause()) instanceof BadUsageException) {
+        String message = ex.getMessage();
+        if (message == null) {
+          message = "";
         }
-        method.invoke(executor);
-        if (executor instanceof Viewable) {
-          newView(Viewable.class.cast(executor));
-        }
-        if (!isReadOnly) {
-          // TODO Release the lock.
-        }
+        newView("Bad usage for '" + currCmd.name + "'. " + message);
       }
     } catch (Exception e) {
-      Throwable ex;
-      String message;
-      if ((ex = e.getCause()) instanceof BadUsageException) {
-        message = ex.getMessage();
-        if (message == null) {
-          message = "";
-        }
-        newView("Bad usage for command " + currCmd.name + ". " + message);
-      } else if ((ex = e.getCause()) instanceof IllegalStateException) {
-        message = ex.getMessage();
-        if (message == null) {
-          message = "";
-        }
-        newView("Illegal state. " + message);
-      } else {
-        e.printStackTrace();
-        throw new Error();
-      }
+      e.printStackTrace();
+      throw new Error();
+    } finally {
+      currCmd = null;
+      Status.getInstance().endRunCmd();
     }
-    currCmd = null;
-    Status.getInstance().endRunCmd();
-
   }
 
   @Override
   public String getView() {
     StringBuilder sb = new StringBuilder("Supported commands: \n\n");
     for (Cmd cmd : supportedCmdList) {
-      sb.append("\t" + cmd.getName() + ": \n\t\t" + cmd.getDescription() + "\n\n");
+      sb.append("\t" + cmd.getName() + " \n\t\t" + cmd.getDescription() + "\n\n");
     }
-    sb.append("NOTE:\n\tPlease use letter, number, underscore and dash only. And please start with "
-        + "letter and don't end with underscore or dash for naming conventions. \n\tOtherwise the "
-        + "command will be consider a bad usage and won't be accepted.");
+    sb.append(usageInstruction);
     return sb.toString();
   }
 
@@ -128,9 +127,28 @@ public class SupportedCmds implements Viewable {
     return false;
   }
 
-  public void setSupportedCmdList(List<Cmd> supportedCmdList) {
-    this.supportedCmdList = supportedCmdList;
+  private void invokeCmd(Method method, Executable executor, boolean isReadOnly) throws Exception {
+    try {
+      if (isReadOnly) {
+        rwLock.readLock().lock();
+      } else {
+        rwLock.writeLock().lock();
+      }
+      method.invoke(executor);
+      if (executor instanceof Viewable) {
+        newView(Viewable.class.cast(executor));
+      }
+    } catch (Exception e) {
+      throw e;
+    } finally {
+      if (isReadOnly) {
+        rwLock.readLock().unlock();
+      } else {
+        rwLock.writeLock().unlock();
+      }
+    }
   }
+
 
   /**
    * Command class. The regx and executorClassName is injected by applicationContext. String sql

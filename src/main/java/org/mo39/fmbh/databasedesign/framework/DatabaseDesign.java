@@ -15,6 +15,11 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class DatabaseDesign {
 
+  public DatabaseDesign(String welcomeInfo, String prompt) {
+    this.prompt = prompt;
+    this.welcomeInfo = welcomeInfo;
+  }
+
   private String prompt;
   private String welcomeInfo;
 
@@ -31,12 +36,13 @@ public class DatabaseDesign {
     CommandLineParser parser = new DefaultParser();
     opts.addOption("h", "help", false, "Help description.");
     opts.addOption("r", "run", false, "Start to run database.");
-    opts.addOption("a", "all", false, "Show all supported SQL commands. All must end with ';'");
+    opts.addOption("a", "all", false, "Show all supported Database commands.");
 
     CommandLine cl = null;
     try {
       cl = parser.parse(opts, args);
     } catch (ParseException e) {
+      throw new RuntimeException("ParseException.");
     }
 
     if (cl.hasOption('r')) {
@@ -44,7 +50,7 @@ public class DatabaseDesign {
     } else if (cl.hasOption('a')) {
       dbDesign.optionAll();
     } else {
-      new HelpFormatter().printHelp("Show Options.", opts);
+      new HelpFormatter().printHelp(" ", opts);
     }
   }
 
@@ -72,14 +78,6 @@ public class DatabaseDesign {
         }
       }
     }).start();
-  }
-
-  public void setPrompt(String prompt) {
-    this.prompt = prompt;
-  }
-
-  public void setWelcomeInfo(String welcomeInfo) {
-    this.welcomeInfo = welcomeInfo;
   }
 
   public static void main(String[] args) {

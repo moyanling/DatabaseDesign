@@ -15,13 +15,16 @@
 		
 	<import resource="SupportedCmds.xml" />
 	<context:property-placeholder location="classpath:InfoStrings.properties"/>
-	<context:component-scan base-package="org.mo39.fmbh.databasedesign.test" />
+	<context:component-scan base-package="org.mo39.fmbh.databasedesign.framework" />
 
 	<bean id="databaseDesign" class="org.mo39.fmbh.databasedesign.framework.DatabaseDesign">
-		<property name="prompt" value="${prompt}"/>
-		<property name="welcomeInfo" value="${welcomeInfo}"/>
+		<constructor-arg value="${welcomeInfo}"/>
+		<constructor-arg value="${prompt}"/>
 	</bean>
 	
+	<bean id="supportedCmds" class="org.mo39.fmbh.databasedesign.framework.SupportedCmds">
+		<constructor-arg value="${usageInstruction}" />
+	</bean>
 	
 </beans>
 
