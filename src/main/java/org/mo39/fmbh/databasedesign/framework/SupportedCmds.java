@@ -1,7 +1,5 @@
 package org.mo39.fmbh.databasedesign.framework;
 
-import static org.mo39.fmbh.databasedesign.framework.View.newView;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -58,7 +56,8 @@ public class SupportedCmds implements Viewable {
    * <p>
    * The method provides several features:<br>
    * &emsp;- check state according to annotation {@link RequiresActiveSchema}<br>
-   * &emsp;- check if execute method is read only operation according to annotation {@link IsReadOnly}<br>
+   * &emsp;- check if execute method is read only operation according to annotation
+   * {@link IsReadOnly}<br>
    * &emsp;- view result according to Viewable interface (if implemented) right after the execution
    * finishes<br>
    * &emsp;- catch certain execeptions, display the message and consider the execution a failure (in
@@ -83,7 +82,7 @@ public class SupportedCmds implements Viewable {
       if (message == null) {
         message = "";
       }
-      newView("Illegal state. " + message);
+      View.newView("Illegal state. " + message);
     } catch (InvocationTargetException e) {
       Throwable ex;
       if ((ex = e.getCause()) instanceof BadUsageException) {
@@ -91,7 +90,7 @@ public class SupportedCmds implements Viewable {
         if (message == null) {
           message = "";
         }
-        newView("Bad usage for '" + currCmd.name + "'. " + message);
+        View.newView("Bad usage for '" + currCmd.name + "'. " + message);
       }
     } catch (Exception e) {
       e.printStackTrace();
@@ -136,7 +135,7 @@ public class SupportedCmds implements Viewable {
       }
       method.invoke(executor);
       if (executor instanceof Viewable) {
-        newView(Viewable.class.cast(executor));
+        View.newView(Viewable.class.cast(executor));
       }
     } catch (Exception e) {
       throw e;
@@ -151,8 +150,8 @@ public class SupportedCmds implements Viewable {
 
 
   /**
-   * Command class. The regx and executorClassName is injected by applicationContext. String sql
-   * should not be injected. It should be set when the input matches regx.
+   * Command class. The fields are injected by applicationContext except cmd. String cmd is set
+   * manually if the input arg matches the regx.
    *
    * @author Jihan Chen
    *
