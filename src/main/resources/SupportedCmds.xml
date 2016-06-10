@@ -41,7 +41,7 @@
 				<bean id="dropSchema" class="org.mo39.fmbh.databasedesign.framework.SupportedCmds$Cmd">
 					<property name="name" value="DROP SCHEMA" />
 					<property name="regx" value="^DROP\s*?SCHEMA\s*?\;$" />
-					<property name="description" value="- Remove the current activated schema from the archive, and all of its contained tables. Use it carefully" />
+					<property name="description" value="- Remove the current activated schema from the archive, and all of its contained tables. Use it carefully." />
 					<property name="executorClassName" value="org.mo39.fmbh.databasedesign.executor.BasicSchemaOperationExecutor$DropSchema" />
 				</bean>
 			

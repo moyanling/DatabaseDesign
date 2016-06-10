@@ -1,13 +1,12 @@
 package org.mo39.fmbh.databasedesign.executor;
 
-import static org.mo39.fmbh.databasedesign.utils.NamingUtils.extractAndCheckName;
-
 import java.util.Set;
 
 import org.mo39.fmbh.databasedesign.framework.DatabaseDesignExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.framework.Status;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
 import org.mo39.fmbh.databasedesign.utils.IOUtils;
+import org.mo39.fmbh.databasedesign.utils.NamingUtils;
 
 
 public abstract class BasicSchemaOperationExecutor {
@@ -45,7 +44,8 @@ public abstract class BasicSchemaOperationExecutor {
     @Override
     @IsReadOnly
     public void execute() {
-      String schemaName = extractAndCheckName(Status.getInstance().getCurrentCmd(), REGEX, 1);
+      String schemaName =
+          NamingUtils.extractAndCheckName(Status.getInstance().getCurrentCmd(), REGEX, 1);
       if (schemaName != null) {
         Set<String> schemaSet = IOUtils.getSchemas();
         if (schemaSet.contains(schemaName)) {
@@ -72,7 +72,8 @@ public abstract class BasicSchemaOperationExecutor {
 
     @Override
     public void execute() {
-      String schemaName = extractAndCheckName(Status.getInstance().getCurrentCmd(), REGEX, 1);
+      String schemaName =
+          NamingUtils.extractAndCheckName(Status.getInstance().getCurrentCmd(), REGEX, 1);
       if (schemaName != null) {
         Set<String> schemaSet = IOUtils.getSchemas();
         if (schemaSet.contains(schemaName)) {
