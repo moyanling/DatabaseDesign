@@ -2,7 +2,7 @@ package org.mo39.fmbh.databasedesign.framework;
 
 /**
  * This presents the current status of database. Includes but not limited to the schema, table and
- * SQL currently using. The class is run in threads and should have a thread local copy per thread.
+ * SQL currently using. The class is run in threads and have a thread local copy per thread.
  *
  * @author Jihan Chen
  *
@@ -12,7 +12,6 @@ public class Status {
   private Status() {}
 
   private String currentCmd;
-  private String currentTable;
   private String currentSchema;
 
   private static ThreadLocal<Status> holder = ThreadLocal.<Status>withInitial(() -> {
@@ -25,12 +24,8 @@ public class Status {
     // return null;
   }
 
-  public boolean hasActiveTable() {
-    return currentTable == null;
-  }
-
   public boolean hasActiveSchema() {
-    return currentSchema == null;
+    return currentSchema != null;
   }
 
   public String getCurrentCmd() {
@@ -39,14 +34,6 @@ public class Status {
 
   public void setCurrentCmd(String currentCmd) {
     this.currentCmd = currentCmd;
-  }
-
-  public String getCurrentTable() {
-    return currentTable;
-  }
-
-  public void setCurrentTable(String currentTable) {
-    this.currentTable = currentTable;
   }
 
   public String getCurrentSchema() {

@@ -21,7 +21,7 @@ public class ExitDatabase implements Executable, Viewable {
   }
 
   @Override
-  @ExitOperation
+  @IsReadOnly
   public void execute() {
     cmdStr = Status.getInstance().getCurrentCmd();
 

@@ -68,7 +68,7 @@ public class DatabaseDesign {
         if (supportedCmds.supports(query)) {
           supportedCmds.runCmd();
         } else {
-          View.newView("UnsupportedOperationException()");
+          View.newView("Unsupported Operation.");
         }
       }
     }).start();
