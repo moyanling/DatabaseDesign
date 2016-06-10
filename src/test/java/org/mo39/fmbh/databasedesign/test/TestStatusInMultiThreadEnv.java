@@ -15,21 +15,16 @@ public class TestStatusInMultiThreadEnv {
     new Thread(() -> {
       Status instance = Status.getInstance();
       instance.setCurrentSchema("t1 schema");
-      instance.setCurrentTable("t1 table");
       assertEquals(instance.getCurrentSchema(), "t1 schema");
-      assertEquals(instance.getCurrentTable(), "t1 table");
     }).start();
     // Thread t2
     new Thread(() -> {
       Status instance = Status.getInstance();
       instance.setCurrentSchema("t2 schema");
-      instance.setCurrentTable("t2 table");
       assertEquals(instance.getCurrentSchema(), "t2 schema");
-      assertEquals(instance.getCurrentTable(), "t2 table");
     }).start();
     // Main Thread
     assertNull(Status.getInstance().getCurrentSchema());
-    assertNull(Status.getInstance().getCurrentTable());
     assertNull(Status.getInstance().getCurrentCmd());
   }
 

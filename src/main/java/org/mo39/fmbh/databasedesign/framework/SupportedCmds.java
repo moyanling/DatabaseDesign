@@ -2,21 +2,15 @@ package org.mo39.fmbh.databasedesign.framework;
 
 import static org.mo39.fmbh.databasedesign.framework.View.newView;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.mo39.fmbh.databasedesign.executor.Executable;
-import org.mo39.fmbh.databasedesign.executor.Executable.ExitOperation;
 import org.mo39.fmbh.databasedesign.executor.Executable.IsReadOnly;
-import org.mo39.fmbh.databasedesign.executor.Executable.RecordOperation;
-import org.mo39.fmbh.databasedesign.executor.Executable.SchemaOperation;
-import org.mo39.fmbh.databasedesign.executor.Executable.TableOperation;
+import org.mo39.fmbh.databasedesign.executor.Executable.RequiresActiveSchema;
 import org.mo39.fmbh.databasedesign.framework.DatabaseDesignExceptions.BadUsageException;
-import org.mo39.fmbh.databasedesign.framework.DatabaseDesignExceptions.MissingAnnotationException;
-import org.mo39.fmbh.databasedesign.framework.View.CliView;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
 
 public class SupportedCmds implements Viewable {
@@ -42,9 +36,23 @@ public class SupportedCmds implements Viewable {
         return true;
       }
     }
+    currCmd = null;
     return false;
   }
 
+  /**
+   * Run command. The command can only be run after {@link SupportedCmds#supports} function is
+   * called and returns true.
+   * <p>
+   * The method provides several features:<br>
+   * &emsp;- check state according to annotation. {@link RequiresActiveSchema}<br>
+   * &emsp;- check if execute method is read only operation. {@link IsReadOnly}<br>
+   * &emsp;- view result according to Viewable interface (if implemented) right after the execution
+   * finishes<br>
+   * &emsp;- catch certain execeptions, display the message and consider the execution a failure (in which
+   * case the Viewable result will not be displayed).<br>
+   *
+   */
   public void runCmd() {
     if (currCmd == null) {
       throw new IllegalStateException("Please check whether cmd is supported first.");
@@ -70,12 +78,19 @@ public class SupportedCmds implements Viewable {
       }
     } catch (Exception e) {
       Throwable ex;
+      String message;
       if ((ex = e.getCause()) instanceof BadUsageException) {
-        String message = ex.getMessage();
+        message = ex.getMessage();
         if (message == null) {
           message = "";
         }
         newView("Bad usage for command " + currCmd.name + ". " + message);
+      } else if ((ex = e.getCause()) instanceof IllegalStateException) {
+        message = ex.getMessage();
+        if (message == null) {
+          message = "";
+        }
+        newView("Illegal state. " + message);
       } else {
         e.printStackTrace();
         throw new Error();
@@ -83,58 +98,10 @@ public class SupportedCmds implements Viewable {
     }
     currCmd = null;
     Status.getInstance().endRunCmd();
-  }
 
-  /**
-   * Check some state constraints according to Annotation. If check fails, an IllegalStateException
-   * is thrown. Not all annotations have constraints And all execute methods must be annotated.
-   *
-   * @param method
-   */
-  private void checkOperationAnnotation(Method method) {
-    Annotation annotation = null;
-    if ((annotation = method.getAnnotation(RecordOperation.class)) != null) {
-      RecordOperation record = RecordOperation.class.cast(annotation);
-      if (record.requireActiveSchema() == true) {
-        if (!Status.getInstance().hasActiveSchema()) {
-          throw new IllegalStateException("No schema is found on sql operation.");
-        }
-      }
-      if (record.requireActiveTable() == true) {
-        if (!Status.getInstance().hasActiveTable()) {
-          throw new IllegalStateException("No table is found on sql operation.");
-        }
-      }
-    } else if ((annotation = method.getAnnotation(TableOperation.class)) != null) {
-      TableOperation tableAnnotation = TableOperation.class.cast(annotation);
-      if (tableAnnotation.requiresActiveSchema() == true) {
-        if (!Status.getInstance().hasActiveSchema()) {
-          System.err.println(Status.getInstance().getCurrentSchema());
-          throw new IllegalStateException("No schema is found on table operation.");
-        }
-      }
-      // -------------------------------------------------
-    } else if ((annotation = method.getAnnotation(SchemaOperation.class)) != null) {
-      // -------------------------------------------------
-    } else if ((annotation = method.getAnnotation(ExitOperation.class)) != null) {
-      // -------------------------------------------------
-    } else {
-      throw new MissingAnnotationException("No operation annotation is found on execute method.");
-    }
-  }
-
-  private boolean checkReadOnlyAnnotation(Method method) {
-    Annotation annotation = null;
-    if ((annotation = method.getAnnotation(IsReadOnly.class)) != null) {
-      return IsReadOnly.class.cast(annotation).value();
-    } else {
-      return false;
-      // throw new MissingAnnotationException("No IsReadOnly is found on execute method.");
-    }
   }
 
   @Override
-  @CliView
   public String getView() {
     StringBuilder sb = new StringBuilder("Supported commands: \n\n");
     for (Cmd cmd : supportedCmdList) {
@@ -146,6 +113,20 @@ public class SupportedCmds implements Viewable {
     return sb.toString();
   }
 
+  private void checkOperationAnnotation(Method method) {
+    if (method.getAnnotation(RequiresActiveSchema.class) != null) {
+      if (!Status.getInstance().hasActiveSchema()) {
+        throw new IllegalStateException("No schema is activated for operation.");
+      }
+    }
+  }
+
+  private boolean checkReadOnlyAnnotation(Method method) {
+    if (method.getAnnotation(IsReadOnly.class) != null) {
+      return true;
+    }
+    return false;
+  }
 
   public void setSupportedCmdList(List<Cmd> supportedCmdList) {
     this.supportedCmdList = supportedCmdList;
