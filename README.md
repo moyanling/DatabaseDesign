@@ -15,4 +15,4 @@ It's going to support following commands:<br>
 • EXIT – Cleanly exits the program and saves all table and index information in non-volatile files.<br>
 
 Features:<br>
-• New schemas can be added easily by a declaration in xml file and provide a Executable interface implementation.
+• New Database Commands can be added easily by a declaration in xml file and provide a Executable interface implementation.
