@@ -32,7 +32,7 @@ public class DatabaseDesign {
       Matcher matcher = regx.matcher(arg);
       if (matcher.matches()) {
         cmd.setCmdStr(arg);
-        Status.setCurrentCmd(Status.getCurrentCmd());
+        Status.setCurrentCmd(cmd);
         return true;
       }
     }
