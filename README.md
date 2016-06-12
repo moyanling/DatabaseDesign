@@ -13,3 +13,6 @@ It's going to support following commands:<br>
 • DROP TABLE – Remove a table schema, and all of its contained data.<br>
 • “SELECT-FROM-WHERE” -style query<br>
 • EXIT – Cleanly exits the program and saves all table and index information in non-volatile files.<br>
+
+Features:<br>
+• New schemas can be added easily by a declaration in xml file and provide a Executable interface implementation.
