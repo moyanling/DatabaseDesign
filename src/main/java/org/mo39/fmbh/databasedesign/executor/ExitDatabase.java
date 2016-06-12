@@ -23,7 +23,7 @@ public class ExitDatabase implements Executable, Viewable {
   @Override
   @IsReadOnly
   public void execute() {
-    cmdStr = Status.getInstance().getCurrentCmd();
+    cmdStr = Status.getCurrentCmdStr();
 
     Pattern regx = Pattern.compile(REGX, Pattern.CASE_INSENSITIVE);
     Matcher matcher = regx.matcher(cmdStr);

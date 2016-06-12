@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+<beans 
+	xmlns="http://www.springframework.org/schema/beans"
 	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:util="http://www.springframework.org/schema/util"
 	xmlns:context="http://www.springframework.org/schema/context"
-	xmlns:util="http://www.springframework.org/schema/util" 
 	xsi:schemaLocation="
 		http://www.springframework.org/schema/beans 
 	   	http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
@@ -12,17 +13,23 @@
 	   	http://www.springframework.org/schema/util 
 		http://www.springframework.org/schema/util/spring-util.xsd
 		">
-		
+
 	<import resource="SupportedCmds.xml" />
-	<context:property-placeholder location="classpath:InfoStrings.properties"/>
-	<context:component-scan base-package="org.mo39.fmbh.databasedesign.test" />
+
+	<context:property-placeholder location="classpath:SystemProperties.properties" />
+	<context:component-scan base-package="org.mo39.fmbh.databasedesign.framework" />
 
 	<bean id="databaseDesign" class="org.mo39.fmbh.databasedesign.framework.DatabaseDesign">
-		<property name="prompt" value="${prompt}"/>
-		<property name="welcomeInfo" value="${welcomeInfo}"/>
+		<property name="supportedCmdList" ref="supportedCmdList" />
+		<property name="systemProperties" ref="systemProperties" />
 	</bean>
-	
-	
+
+	<util:map id="systemProperties">
+		<entry key="prompt" value="${info.prompt}" />
+		<entry key="welcome" value="${info.welcome}" />
+		<entry key="usageInstruction" value="${info.usageInstruction}" />
+	</util:map>
+
 </beans>
 
 

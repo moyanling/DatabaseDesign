@@ -1,89 +1,118 @@
 package org.mo39.fmbh.databasedesign.framework;
 
-import java.util.Scanner;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import javax.annotation.Resource;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.mo39.fmbh.databasedesign.executor.Executable;
+import org.mo39.fmbh.databasedesign.executor.Executable.IsReadOnly;
+import org.mo39.fmbh.databasedesign.executor.Executable.RequiresActiveSchema;
+import org.mo39.fmbh.databasedesign.framework.DatabaseDesignExceptions.BadUsageException;
+import org.mo39.fmbh.databasedesign.framework.View.Viewable;
 
 public class DatabaseDesign {
 
-  private String prompt;
-  private String welcomeInfo;
+  private List<Cmd> supportedCmdList;
+  private Map<String, String> SystemProperties;
 
-  @Resource(name = "supportedCmds")
-  private SupportedCmds supportedCmds;
-  private static Scanner scan = new Scanner(System.in);
+  /**
+   * Check whether input string is supported. If returns true, {@link SupportedCmds#runCmd} can be
+   * called.
+   *
+   * @param arg
+   * @return Returns true if supports. Otherwise false.
+   */
+  public boolean supports(String arg) {
+    for (Cmd cmd : supportedCmdList) {
+      Pattern regx = Pattern.compile(cmd.getRegx(), Pattern.CASE_INSENSITIVE);
+      Matcher matcher = regx.matcher(arg);
+      if (matcher.matches()) {
+        cmd.setCmdStr(arg);
+        Status.setCurrentCmd(cmd);
+        return true;
+      }
+    }
+    return false;
+  }
 
-  public static void giveItAShot(String[] args) {
-    @SuppressWarnings("resource")
-    ApplicationContext ctx = new ClassPathXmlApplicationContext("applicationContext.xml");
-    DatabaseDesign dbDesign = ctx.getBean(DatabaseDesign.class);
-
-    Options opts = new Options();
-    CommandLineParser parser = new DefaultParser();
-    opts.addOption("h", "help", false, "Help description.");
-    opts.addOption("r", "run", false, "Start to run database.");
-    opts.addOption("a", "all", false, "Show all supported SQL commands. All must end with ';'");
-
-    CommandLine cl = null;
+  /**
+   * Run command. The command can only be run after {@link SupportedCmds#supports} function is
+   * called and returns true.
+   * <p>
+   * The method provides several features:<br>
+   * &emsp;- check state according to annotation {@link RequiresActiveSchema}<br>
+   * &emsp;- check if execute method is read only operation according to annotation
+   * {@link IsReadOnly}<br>
+   * &emsp;- view result according to Viewable interface (if implemented) right after the execution
+   * finishes<br>
+   * &emsp;- catch certain execeptions, display the message and consider the execution a failure (in
+   * which case the Viewable result will not be displayed).<br>
+   *
+   */
+  public void runCmd() {
+    if (Status.getCurrentCmd() == null) {
+      throw new IllegalStateException("Please check whether cmd is supported first.");
+    }
     try {
-      cl = parser.parse(opts, args);
-    } catch (ParseException e) {
-    }
-
-    if (cl.hasOption('r')) {
-      dbDesign.optionRun();
-    } else if (cl.hasOption('a')) {
-      dbDesign.optionAll();
-    } else {
-      new HelpFormatter().printHelp("Show Options.", opts);
-    }
-  }
-
-  private void optionAll() {
-    View.newView(supportedCmds);
-  }
-
-  private void optionRun() {
-    View.newView(welcomeInfo);
-    new Thread(() -> {
-      while (true) {
-        View.newView(prompt);
-        StringBuilder arg = new StringBuilder();
-        String query = null;
-        for (int i = 0; i <= 10; i++) {
-          arg.append(scan.nextLine() + " ");
-          if ((query = arg.toString().trim()).endsWith(";")) {
-            break;
-          }
-        }
-        if (supportedCmds.supports(query)) {
-          supportedCmds.runCmd();
-        } else {
-          View.newView("Unsupported Operation.");
+      Class<?> klass = Class.forName(Status.getCurrentCmd().getExecutorClassName());
+      if (Executable.class.isAssignableFrom(klass)) {
+        Executable executor = Executable.class.cast(klass.newInstance());
+        Method method = executor.getClass().getMethod("execute");
+        checkOperationAnnotation(method);
+        method.invoke(executor);
+        if (executor instanceof Viewable) {
+          View.newView(Viewable.class.cast(executor));
         }
       }
-    }).start();
+    } catch (IllegalStateException e) {
+      String message = e.getMessage();
+      if (message == null) {
+        message = "";
+      }
+      View.newView("Illegal state. " + message);
+    } catch (InvocationTargetException e) {
+      Throwable ex;
+      if ((ex = e.getCause()) instanceof BadUsageException) {
+        String message = ex.getMessage();
+        if (message == null) {
+          message = "";
+        }
+        View.newView("Bad usage for '" + Status.getCurrentCmd().getName() + "'. " + message);
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw new Error();
+    } finally {
+      Status.endRunCmd();
+    }
   }
 
-  public void setPrompt(String prompt) {
-    this.prompt = prompt;
+  private void checkOperationAnnotation(Method method) {
+    if (method.getAnnotation(RequiresActiveSchema.class) != null) {
+      if (!Status.hasActiveSchema()) {
+        throw new IllegalStateException("No schema is activated for operation.");
+      }
+    }
   }
 
-  public void setWelcomeInfo(String welcomeInfo) {
-    this.welcomeInfo = welcomeInfo;
+  public List<Cmd> getSupportedCmdList() {
+    return supportedCmdList;
   }
 
-  public static void main(String[] args) {
-    giveItAShot(args);
+  public void setSupportedCmdList(List<Cmd> supportedCmdList) {
+    this.supportedCmdList = supportedCmdList;
+  }
+
+  public Map<String, String> getSystemProperties() {
+    return SystemProperties;
+  }
+
+  public void setSystemProperties(Map<String, String> systemProperties) {
+    SystemProperties = Collections.unmodifiableMap(systemProperties);
   }
 
 }
