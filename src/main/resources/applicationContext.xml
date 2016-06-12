@@ -14,16 +14,13 @@
 		">
 		
 	<import resource="SupportedCmds.xml" />
-	<context:property-placeholder location="classpath:InfoStrings.properties"/>
+	<import resource="SystemProperties.xml" />
+	
 	<context:component-scan base-package="org.mo39.fmbh.databasedesign.framework" />
 
 	<bean id="databaseDesign" class="org.mo39.fmbh.databasedesign.framework.DatabaseDesign">
-		<constructor-arg value="${welcomeInfo}"/>
-		<constructor-arg value="${prompt}"/>
-	</bean>
-	
-	<bean id="supportedCmds" class="org.mo39.fmbh.databasedesign.framework.SupportedCmds">
-		<constructor-arg value="${usageInstruction}" />
+		<property name="supportedCmdList" ref="supportedCmdList"/>
+		<property name="systemProperties" ref="SystemProperties"/>
 	</bean>
 	
 </beans>

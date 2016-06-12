@@ -23,7 +23,7 @@ public abstract class BasicTableOperationExecutor {
     @IsReadOnly
     @RequiresActiveSchema
     public void execute() {
-      Set<String> tableSet = IOUtils.getTables(Status.getInstance().getCurrentSchema());
+      Set<String> tableSet = IOUtils.getTables(Status.getCurrentSchema());
       StringBuilder sb = new StringBuilder("Show Tables: ");
       for (String tableName : tableSet) {
         sb.append("\n\t" + tableName + "\n");
@@ -48,11 +48,11 @@ public abstract class BasicTableOperationExecutor {
     @RequiresActiveSchema
     public void execute() {
       String tableName =
-          NamingUtils.extractAndCheckName(Status.getInstance().getCurrentCmd(), REGEX, 1);
+          NamingUtils.extractAndCheckName(Status.getCurrentCmdStr(), REGEX, 1);
       if (tableName == null) {
         throw new BadUsageException();
       }
-      String schemaName = Status.getInstance().getCurrentSchema();
+      String schemaName = Status.getCurrentSchema();
       Set<String> tableSet = IOUtils.getTables(schemaName);
       if (tableSet.contains(tableName)) {
         if (IOUtils.deleteTable(schemaName, tableName)) {
@@ -63,7 +63,7 @@ public abstract class BasicTableOperationExecutor {
         }
       } else {
         endMessage = "The table does not exist in current schema - '"
-            + Status.getInstance().getCurrentSchema() + "'.";
+            + Status.getCurrentSchema() + "'.";
       }
 
     }

@@ -11,44 +11,38 @@ public class Status {
 
   private Status() {}
 
-  private String currentCmd;
-  private String currentSchema;
+  private static Cmd currentCmd;
+  private static String currentSchema;
 
-  private static ThreadLocal<Status> holder = ThreadLocal.<Status>withInitial(() -> {
-    return new Status();
-  });
-
-  public static Status getInstance() {
-    return holder.get();
-    // TODO Try to implement your own thread local instance here.
-    // return null;
+  public static String getCurrentCmdStr() {
+    return Status.currentCmd.getCmdStr();
   }
 
-  public boolean hasActiveSchema() {
+  public static boolean hasActiveSchema() {
     return currentSchema != null;
   }
 
-  public String getCurrentCmd() {
+  public static Cmd getCurrentCmd() {
     return currentCmd;
   }
 
-  public void setCurrentCmd(String currentCmd) {
-    this.currentCmd = currentCmd;
+  public static void setCurrentCmd(Cmd currentCmd) {
+    Status.currentCmd = currentCmd;
   }
 
-  public String getCurrentSchema() {
+  public static String getCurrentSchema() {
     return currentSchema;
   }
 
-  public void setCurrentSchema(String currentSchema) {
-    this.currentSchema = currentSchema;
+  public static void setCurrentSchema(String currentSchema) {
+    Status.currentSchema = currentSchema;
   }
 
   /**
    * When the command run is finished, the currentCmd field is set back to null. This is called only
    * in framework.SupportedCmds after the execution of cmd.
    */
-  protected void endRunCmd() {
+  protected static void endRunCmd() {
     currentCmd = null;
   }
 

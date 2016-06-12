@@ -4,7 +4,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 import org.mo39.fmbh.databasedesign.framework.DatabaseDesignExceptions.BadUsageException;
-import org.mo39.fmbh.databasedesign.framework.SupportedCmds;
 import org.mo39.fmbh.databasedesign.utils.NamingUtils;
 
 
@@ -61,6 +60,7 @@ public interface Executable {
   }
 
   /**
+   * //TODO Not implemented yet. Maybe useful for operating in a multi-threads env.<br>
    * This annotation indicates whether the execute method is read only to database, i.e archive. If
    * this annotation is not provided, the execute method would operate in a thread-safe manner. If
    * the method is read-only, multi read-only access can happen concurrently. Use this annotation on
