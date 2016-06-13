@@ -108,9 +108,6 @@ public abstract class BasicSchemaOperationExecutor {
     @RequiresActiveSchema
     public void execute() {
       String schemaName = Status.getCurrentSchema();
-      if (schemaName == null) {
-        throw new BadUsageException();
-      }
       Set<String> schemaSet = IOUtils.getSchemas();
       if (schemaSet.contains(schemaName)) {
         if (IOUtils.deleteSchema(schemaName)) {

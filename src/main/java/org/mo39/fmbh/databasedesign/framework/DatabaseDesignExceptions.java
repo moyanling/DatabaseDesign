@@ -27,9 +27,7 @@ public abstract class DatabaseDesignExceptions {
   }
 
   public static class InvalidNamingConventionException extends RuntimeException {
-    /**
-     * 
-     */
+
     private static final long serialVersionUID = 1L;
 
     public InvalidNamingConventionException() {}
