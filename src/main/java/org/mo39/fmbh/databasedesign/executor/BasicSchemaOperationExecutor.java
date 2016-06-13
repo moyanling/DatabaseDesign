@@ -13,7 +13,7 @@ public abstract class BasicSchemaOperationExecutor {
 
   public static class ShowSchemas implements Executable, Viewable {
 
-    private static String endMessage;
+    private String endMessage;
 
     @Override
     @IsReadOnly
@@ -37,7 +37,7 @@ public abstract class BasicSchemaOperationExecutor {
 
   public static class Use implements Executable, Viewable {
 
-    private static String endMessage;
+    private String endMessage;
 
     private static final String REGEX = "^USE(.*?)\\;$";
 
@@ -67,7 +67,7 @@ public abstract class BasicSchemaOperationExecutor {
 
   public static class CreateSchema implements Executable, Viewable {
 
-    private static String endMessage;
+    private String endMessage;
     private static final String REGEX = "^CREATE\\s*?SCHEMA(.*?)\\;$";
 
     @Override
@@ -96,7 +96,7 @@ public abstract class BasicSchemaOperationExecutor {
 
   public static class DropSchema implements Executable, Viewable {
 
-    private static String endMessage;
+    private String endMessage;
 
     @Override
     public String getView() {

@@ -12,7 +12,7 @@ public abstract class BasicTableOperationExecutor {
 
   public static class ShowTables implements Executable, Viewable {
 
-    private static String endMessage;
+    private String endMessage;
 
     @Override
     public String getView() {
@@ -35,7 +35,7 @@ public abstract class BasicTableOperationExecutor {
 
   public static class DropTable implements Executable, Viewable {
 
-    private static String endMessage;
+    private String endMessage;
     private static final String REGEX = "^DROP\\s*?TABLE(.*?)\\;$";
 
 
@@ -73,7 +73,7 @@ public abstract class BasicTableOperationExecutor {
 
   public static class CreateTable implements Executable, Viewable {
 
-    private static String endMessage;
+    private String endMessage;
     // private static final String REGEX = "^CREATE\\s*?TABLE(.*?)\\;$";
 
     @Override
