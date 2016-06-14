@@ -11,39 +11,85 @@ import com.google.common.collect.Maps;
 
 public abstract class NamingUtils {
 
+  /**
+   * Reusable reference. In each method that uses regulare expression, these will be assigned and
+   * refered.
+   */
   private static Matcher matcher;
   private static String group;
 
+  /**
+   * The group index for regular expression.
+   */
   private static final int SCHEMA = 1;
   private static final int TABLE = 2;
   private static final int COLUMN = 3;
 
-  private static final Pattern NAMING_CONSTRAINT =
+  /**
+   * A compiled regex pattern for naming convention.
+   */
+  private static final Pattern NAMING_CONVENTION =
       Pattern.compile("^[a-zA-Z][a-zA-Z0-9\\_\\-]*?(?<!\\_)(?<!\\-)$");
 
-  private static final Pattern TBL_FILE_NAMING_CONSTRAINT = Pattern.compile("(.*?)\\.(.*?)\\.tbl");
+  /**
+   * A compiled regex pattern for .tbl file naming convention.
+   */
+  private static final Pattern TBL_FILE_NAMING_CONVENTION = Pattern.compile("(.*?)\\.(.*?)\\.tbl");
 
-  private static final Pattern NDX_FILE_NAMING_CONSTRAINT =
+  /**
+   * A compiled regex pattern for .ndx file naming convention.
+   */
+  private static final Pattern NDX_FILE_NAMING_CONVENTION =
       Pattern.compile("(.*?)\\.(.*?)\\.(.*?)\\.ndx");
 
-  public static String inferSchemaFromtbl(String tableFileName) {
-    return inferFrom(tableFileName, SCHEMA, TBL_FILE_NAMING_CONSTRAINT);
+  /**
+   * infer schema name from .tbl file.
+   *
+   * @param tableFileName
+   * @return
+   */
+  public static String inferSchemaFromtbl(String tblFileName) {
+    return inferFrom(tblFileName, SCHEMA, TBL_FILE_NAMING_CONVENTION);
   }
 
-  public static String inferTableFromtbl(String tableFileName) {
-    return inferFrom(tableFileName, TABLE, TBL_FILE_NAMING_CONSTRAINT);
+  /**
+   * infer table name fomr .tbl file
+   *
+   * @param tblFileName
+   * @return
+   */
+  public static String inferTableFromtbl(String tblFileName) {
+    return inferFrom(tblFileName, TABLE, TBL_FILE_NAMING_CONVENTION);
   }
 
-  public static String inferSchemaFromndx(String indexFileName) {
-    return inferFrom(indexFileName, SCHEMA, NDX_FILE_NAMING_CONSTRAINT);
+  /**
+   * infer schema name from .ndx file
+   *
+   * @param ndxFileName
+   * @return
+   */
+  public static String inferSchemaFromndx(String ndxFileName) {
+    return inferFrom(ndxFileName, SCHEMA, NDX_FILE_NAMING_CONVENTION);
   }
 
-  public static String inferTableFromndx(String indexFileName) {
-    return inferFrom(indexFileName, TABLE, NDX_FILE_NAMING_CONSTRAINT);
+  /**
+   * infer table name from .ndx file
+   *
+   * @param ndxFileName
+   * @return
+   */
+  public static String inferTableFromndx(String ndxFileName) {
+    return inferFrom(ndxFileName, TABLE, NDX_FILE_NAMING_CONVENTION);
   }
 
-  public static String inferColumnFromndx(String indexFileName) {
-    return inferFrom(indexFileName, COLUMN, NDX_FILE_NAMING_CONSTRAINT);
+  /**
+   * infer column name from .ndx file
+   *
+   * @param ndxFileName
+   * @return
+   */
+  public static String inferColumnFromndx(String ndxFileName) {
+    return inferFrom(ndxFileName, COLUMN, NDX_FILE_NAMING_CONVENTION);
   }
 
   /**
@@ -61,7 +107,7 @@ public abstract class NamingUtils {
    * @return
    */
   public static boolean checkNamingConventionsWithException(String name) {
-    if (NAMING_CONSTRAINT.matcher(name).matches()) {
+    if (NAMING_CONVENTION.matcher(name).matches()) {
       return true;
     } else {
       throw new InvalidNamingConventionException("Invalid naming convention when checking " + name);
@@ -77,7 +123,7 @@ public abstract class NamingUtils {
    * @return
    */
   public static boolean checkNamingConventions(String name) {
-    return NAMING_CONSTRAINT.matcher(name).matches();
+    return NAMING_CONVENTION.matcher(name).matches();
   }
 
   /**
@@ -112,7 +158,7 @@ public abstract class NamingUtils {
    * @return A unmodifiable map that contains schema and table. {@link Collections.unmodifiableMap}
    */
   public static Map<String, String> decomposeTableFileName(String tableFileName) {
-    if ((matcher = TBL_FILE_NAMING_CONSTRAINT.matcher(tableFileName)).matches()) {
+    if ((matcher = TBL_FILE_NAMING_CONVENTION.matcher(tableFileName)).matches()) {
       Map<String, String> toRet = Maps.newHashMap();
       if (checkNamingConventionsWithException(group = matcher.group(1))) {
         toRet.put("schema", group);
@@ -128,12 +174,12 @@ public abstract class NamingUtils {
   /**
    * Decompose the name of schema ,table and column name from a ndx file.
    *
-   * @param indexFileName
+   * @param ndxFileName
    * @return A unmodifiable map that contains schema, table and column.
    *         {@link Collections.unmodifiableMap}
    */
-  public static Map<String, String> decomposeIndexFileName(String indexFileName) {
-    if ((matcher = NDX_FILE_NAMING_CONSTRAINT.matcher(indexFileName)).matches()) {
+  public static Map<String, String> decomposeIndexFileName(String ndxFileName) {
+    if ((matcher = NDX_FILE_NAMING_CONVENTION.matcher(ndxFileName)).matches()) {
       Map<String, String> toRet = Maps.newHashMap();
       if (checkNamingConventionsWithException(group = matcher.group(1))) {
         toRet.put("schema", group);
@@ -149,8 +195,8 @@ public abstract class NamingUtils {
     return null;
   }
 
-  private static String inferFrom(String indexFileName, int groupNumber, Pattern pattern) {
-    if ((matcher = pattern.matcher(indexFileName)).matches()) {
+  private static String inferFrom(String fileName, int groupNumber, Pattern pattern) {
+    if ((matcher = pattern.matcher(fileName)).matches()) {
       if (checkNamingConventionsWithException(group = matcher.group(groupNumber))) {
         return matcher.group(groupNumber);
       }

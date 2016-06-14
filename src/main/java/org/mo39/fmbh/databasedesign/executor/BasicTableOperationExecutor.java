@@ -5,7 +5,7 @@ import java.util.Set;
 import org.mo39.fmbh.databasedesign.framework.DatabaseDesignExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.framework.Status;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
-import org.mo39.fmbh.databasedesign.utils.IOUtils;
+import org.mo39.fmbh.databasedesign.utils.FileUtils;
 import org.mo39.fmbh.databasedesign.utils.NamingUtils;
 
 public abstract class BasicTableOperationExecutor {
@@ -23,7 +23,7 @@ public abstract class BasicTableOperationExecutor {
     @IsReadOnly
     @RequiresActiveSchema
     public void execute() {
-      Set<String> tableSet = IOUtils.getTables(Status.getCurrentSchema());
+      Set<String> tableSet = FileUtils.getTables(Status.getCurrentSchema());
       StringBuilder sb = new StringBuilder("Show Tables: ");
       for (String tableName : tableSet) {
         sb.append("\n\t" + tableName + "\n");
@@ -53,9 +53,9 @@ public abstract class BasicTableOperationExecutor {
         throw new BadUsageException();
       }
       String schemaName = Status.getCurrentSchema();
-      Set<String> tableSet = IOUtils.getTables(schemaName);
+      Set<String> tableSet = FileUtils.getTables(schemaName);
       if (tableSet.contains(tableName)) {
-        if (IOUtils.deleteTable(schemaName, tableName)) {
+        if (FileUtils.deleteTable(schemaName, tableName)) {
           endMessage = "Table - '" + tableName + "' in schema -'" + schemaName + "' is deleted.";
         } else {
           endMessage =

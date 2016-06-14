@@ -14,7 +14,15 @@ import java.util.regex.Pattern;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
-public class IOUtils {
+/**
+ * This class handles file level process within the archive. It helps to anaylise certain file name,
+ * acquire file names and delete files. It does not support reading or writing the content of the
+ * file.
+ *
+ * @author Jihan Chen
+ *
+ */
+public class FileUtils {
 
   private static final String ARCHIVE_ROOT = ".\\archive";
   private static final Pattern NDX_FILE = Pattern.compile(".*\\.ndx");

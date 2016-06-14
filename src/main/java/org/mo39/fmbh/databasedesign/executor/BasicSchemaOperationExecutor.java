@@ -5,7 +5,7 @@ import java.util.Set;
 import org.mo39.fmbh.databasedesign.framework.DatabaseDesignExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.framework.Status;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
-import org.mo39.fmbh.databasedesign.utils.IOUtils;
+import org.mo39.fmbh.databasedesign.utils.FileUtils;
 import org.mo39.fmbh.databasedesign.utils.NamingUtils;
 
 
@@ -18,7 +18,7 @@ public abstract class BasicSchemaOperationExecutor {
     @Override
     @IsReadOnly
     public void execute() {
-      Set<String> schemaSet = IOUtils.getSchemas();
+      Set<String> schemaSet = FileUtils.getSchemas();
       String currentSchema = Status.getCurrentSchema();
       StringBuilder sb = new StringBuilder("Show Schemas: ");
       for (String schemaName : schemaSet) {
@@ -47,7 +47,7 @@ public abstract class BasicSchemaOperationExecutor {
       String schemaName =
           NamingUtils.extractAndCheckName(Status.getCurrentCmdStr(), REGEX, 1);
       if (schemaName != null) {
-        Set<String> schemaSet = IOUtils.getSchemas();
+        Set<String> schemaSet = FileUtils.getSchemas();
         if (schemaSet.contains(schemaName)) {
           Status.setCurrentSchema(schemaName);
           endMessage = "Schema - '" + schemaName + "' is activated.";
@@ -75,7 +75,7 @@ public abstract class BasicSchemaOperationExecutor {
       String schemaName =
           NamingUtils.extractAndCheckName(Status.getCurrentCmdStr(), REGEX, 1);
       if (schemaName != null) {
-        Set<String> schemaSet = IOUtils.getSchemas();
+        Set<String> schemaSet = FileUtils.getSchemas();
         if (schemaSet.contains(schemaName)) {
           endMessage = "Schema - '" + schemaName + "' already exists.";
         } else {
@@ -108,9 +108,9 @@ public abstract class BasicSchemaOperationExecutor {
     @RequiresActiveSchema
     public void execute() {
       String schemaName = Status.getCurrentSchema();
-      Set<String> schemaSet = IOUtils.getSchemas();
+      Set<String> schemaSet = FileUtils.getSchemas();
       if (schemaSet.contains(schemaName)) {
-        if (IOUtils.deleteSchema(schemaName)) {
+        if (FileUtils.deleteSchema(schemaName)) {
           Status.setCurrentSchema(null);
           endMessage = "Schema - '" + schemaName + "' and it's including tables are deleted";
         } else {
