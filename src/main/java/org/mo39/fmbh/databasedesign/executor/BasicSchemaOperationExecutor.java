@@ -8,9 +8,20 @@ import org.mo39.fmbh.databasedesign.framework.View.Viewable;
 import org.mo39.fmbh.databasedesign.utils.FileUtils;
 import org.mo39.fmbh.databasedesign.utils.NamingUtils;
 
-
+/**
+ * A abstract class that collects some basic schema operations.
+ *
+ * @author Jihan Chen
+ *
+ */
 public abstract class BasicSchemaOperationExecutor {
 
+  /**
+   * Show all schemas in the database.
+   *
+   * @author Jihan Chen
+   *
+   */
   public static class ShowSchemas implements Executable, Viewable {
 
     private String endMessage;
@@ -35,6 +46,12 @@ public abstract class BasicSchemaOperationExecutor {
     }
   }
 
+  /**
+   * Use a specified schema.
+   *
+   * @author Jihan Chen
+   *
+   */
   public static class Use implements Executable, Viewable {
 
     private String endMessage;
@@ -44,8 +61,7 @@ public abstract class BasicSchemaOperationExecutor {
     @Override
     @IsReadOnly
     public void execute() {
-      String schemaName =
-          NamingUtils.extractAndCheckName(Status.getCurrentCmdStr(), REGEX, 1);
+      String schemaName = NamingUtils.extractAndCheckName(Status.getCurrentCmdStr(), REGEX, 1);
       if (schemaName != null) {
         Set<String> schemaSet = FileUtils.getSchemas();
         if (schemaSet.contains(schemaName)) {
@@ -65,6 +81,12 @@ public abstract class BasicSchemaOperationExecutor {
     }
   }
 
+  /**
+   * Create a specified schema. If no table is created in this schema, the schema will not be saved.
+   *
+   * @author chen39
+   *
+   */
   public static class CreateSchema implements Executable, Viewable {
 
     private String endMessage;
@@ -72,8 +94,7 @@ public abstract class BasicSchemaOperationExecutor {
 
     @Override
     public void execute() {
-      String schemaName =
-          NamingUtils.extractAndCheckName(Status.getCurrentCmdStr(), REGEX, 1);
+      String schemaName = NamingUtils.extractAndCheckName(Status.getCurrentCmdStr(), REGEX, 1);
       if (schemaName != null) {
         Set<String> schemaSet = FileUtils.getSchemas();
         if (schemaSet.contains(schemaName)) {
@@ -94,6 +115,12 @@ public abstract class BasicSchemaOperationExecutor {
     }
   }
 
+  /**
+   * Drop the currently activated schema, including all tables belong to this schema.
+   *
+   * @author Jihan Chen
+   *
+   */
   public static class DropSchema implements Executable, Viewable {
 
     private String endMessage;
@@ -104,7 +131,7 @@ public abstract class BasicSchemaOperationExecutor {
     }
 
     @Override
-    @IsReadOnly
+    @RequiresConfirm
     @RequiresActiveSchema
     public void execute() {
       String schemaName = Status.getCurrentSchema();
@@ -117,7 +144,7 @@ public abstract class BasicSchemaOperationExecutor {
           endMessage = "Fails to delete Schema - '" + schemaName + "'";
         }
       } else {
-        endMessage = "The schema -'" + schemaName + "' does not exist in archive";
+        endMessage = "The schema - '" + schemaName + "' does not exist in archive";
       }
     }
 

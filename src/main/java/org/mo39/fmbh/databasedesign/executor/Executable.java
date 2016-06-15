@@ -1,14 +1,17 @@
 package org.mo39.fmbh.databasedesign.executor;
 
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
+import org.mo39.fmbh.databasedesign.framework.DatabaseDesign;
 import org.mo39.fmbh.databasedesign.framework.DatabaseDesignExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.utils.NamingUtils;
 
 
 /**
- * To provide a supported command and run by {@link SupportedCmds#runCmd}, a executor class must:
+ * To provide a supported command and run by {@link DatabaseDesign#runCmd()}, a executor class must:
  * <br>
  * &emsp;- implement Executable;<br>
  * &emsp;- Provide a public non-arg constructor.<br>
@@ -23,10 +26,10 @@ import org.mo39.fmbh.databasedesign.utils.NamingUtils;
  * Viewable interface, the result of the execution will be displayed as soon as the execution
  * finishes.
  * <p>
- * Another way to show message is to throw checked Exceptions claimed by {@link Executable#execute}
- * during the execution. The message of the exception will be caught and displayed. In this case,
- * the execution is considered interrupted by the exception and will not show the result from
- * Viewable interface.
+ * Another way to show message is to throw checked Exceptions claimed by
+ * {@link Executable#execute()} during the execution. The message of the exception will be caught
+ * and displayed. In this case, the execution is considered interrupted by the exception and will
+ * not show the result from Viewable interface.
  *
  *
  * @author Jihan Chen
@@ -36,8 +39,8 @@ public interface Executable {
 
   /**
    * This is a abstract method claimed by Executable interface. This method will be invoked by the
-   * {@link SupportedCmds#runCmd} using reflection. The Executable instance which will be invoked on
-   * is created by newInstance on executor class.
+   * {@link DatabaseDesign#runCmd()} using reflection. The Executable instance which will be invoked
+   * on is created by newInstance on executor class.
    *
    * @throws BadUsageException A bad usage exception for current command. Usually it indicates a
    *         <strong>supported</strong> command is invoked but it fails to be used correctly. Such
@@ -54,8 +57,22 @@ public interface Executable {
    * @author Jihan Chen
    *
    */
+  @Target(ElementType.METHOD)
   @Retention(RetentionPolicy.RUNTIME)
   public static @interface RequiresActiveSchema {
+
+  }
+
+  /**
+   * If this a execution is dangerous, such as drop schema operation, this annotation should be
+   * provided to make the user confirm the operation.
+   *
+   * @author Jihan Chen
+   *
+   */
+  @Target(ElementType.METHOD)
+  @Retention(RetentionPolicy.RUNTIME)
+  public static @interface RequiresConfirm {
 
   }
 
@@ -69,6 +86,7 @@ public interface Executable {
    * @author Jihan Chen
    *
    */
+  @Target(ElementType.METHOD)
   @Retention(RetentionPolicy.RUNTIME)
   public static @interface IsReadOnly {
 

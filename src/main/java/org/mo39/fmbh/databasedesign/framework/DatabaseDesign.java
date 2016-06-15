@@ -12,7 +12,10 @@ import org.mo39.fmbh.databasedesign.executor.Executable;
 import org.mo39.fmbh.databasedesign.executor.Executable.IsReadOnly;
 import org.mo39.fmbh.databasedesign.executor.Executable.RequiresActiveSchema;
 import org.mo39.fmbh.databasedesign.framework.DatabaseDesignExceptions.BadUsageException;
+import org.mo39.fmbh.databasedesign.framework.ExecutionCheck.PostExecutionCheck;
+import org.mo39.fmbh.databasedesign.framework.ExecutionCheck.PreExecutionCheck;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
+import org.mo39.fmbh.databasedesign.model.Cmd;
 
 public class DatabaseDesign {
 
@@ -20,8 +23,8 @@ public class DatabaseDesign {
   private Map<String, String> SystemProperties;
 
   /**
-   * Check whether input string is supported. If returns true, {@link SupportedCmds#runCmd} can be
-   * called.
+   * Check whether input string is a supported Cmd. If returns true, {@link DatabaseDesign#runCmd()}
+   * can be called.
    *
    * @param arg
    * @return Returns true if supports. Otherwise false.
@@ -40,7 +43,7 @@ public class DatabaseDesign {
   }
 
   /**
-   * Run command. The command can only be run after {@link SupportedCmds#supports} function is
+   * Run command. The command can only be run after {@link DatabaseDesign#runCmd()} function is
    * called and returns true.
    * <p>
    * The method provides several features:<br>
@@ -62,18 +65,14 @@ public class DatabaseDesign {
       if (Executable.class.isAssignableFrom(klass)) {
         Executable executor = Executable.class.cast(klass.newInstance());
         Method method = executor.getClass().getMethod("execute");
-        checkOperationAnnotation(method);
-        method.invoke(executor);
-        if (executor instanceof Viewable) {
-          View.newView(Viewable.class.cast(executor));
+        if (PreExecutionCheck.check(method)) {
+          method.invoke(executor);
+          if (executor instanceof Viewable) {
+            View.newView(Viewable.class.cast(executor));
+          }
+          PostExecutionCheck.check();
         }
       }
-    } catch (IllegalStateException e) {
-      String message = e.getMessage();
-      if (message == null) {
-        message = "";
-      }
-      View.newView("Illegal state. " + message);
     } catch (InvocationTargetException e) {
       Throwable ex;
       if ((ex = e.getCause()) instanceof BadUsageException) {
@@ -88,14 +87,6 @@ public class DatabaseDesign {
       throw new Error();
     } finally {
       Status.endRunCmd();
-    }
-  }
-
-  private void checkOperationAnnotation(Method method) {
-    if (method.getAnnotation(RequiresActiveSchema.class) != null) {
-      if (!Status.hasActiveSchema()) {
-        throw new IllegalStateException("No schema is activated for operation.");
-      }
     }
   }
 

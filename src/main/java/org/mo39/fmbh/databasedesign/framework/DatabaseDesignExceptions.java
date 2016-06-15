@@ -35,8 +35,17 @@ public abstract class DatabaseDesignExceptions {
     public InvalidNamingConventionException(String description) {
       super(description);
     }
+  }
 
+  public static class AbortOperationException extends RuntimeException {
 
+    private static final long serialVersionUID = 1L;
+
+    public AbortOperationException() {}
+
+    public AbortOperationException(String description) {
+      super(description);
+    }
   }
 
 }

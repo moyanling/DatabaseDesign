@@ -1,5 +1,7 @@
 package org.mo39.fmbh.databasedesign.framework;
 
+import org.mo39.fmbh.databasedesign.model.Cmd;
+
 /**
  * This presents the current status of database. Includes but not limited to the schema, table and
  * SQL currently using. The class is run in threads and have a thread local copy per thread.
@@ -36,6 +38,20 @@ public class Status {
 
   public static void setCurrentSchema(String currentSchema) {
     Status.currentSchema = currentSchema;
+  }
+
+  // ------------------------------- protected -------------------------------
+
+  protected static Boolean isAborted;
+  protected static Boolean isIllegalState;
+
+  protected static void clearInternalFlag() {
+    isAborted = null;
+    isIllegalState = null;
+  }
+
+  protected static boolean executionShouldStop() {
+    return isAborted == true || isIllegalState == true;
   }
 
   /**

@@ -1,4 +1,4 @@
-package org.mo39.fmbh.databasedesign.framework;
+package org.mo39.fmbh.databasedesign.model;
 
 /**
  * Command class. The fields are injected by applicationContext except cmd. String cmd is set

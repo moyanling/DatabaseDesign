@@ -8,9 +8,9 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.mo39.fmbh.databasedesign.framework.Cmd;
 import org.mo39.fmbh.databasedesign.framework.DatabaseDesign;
 import org.mo39.fmbh.databasedesign.framework.View;
+import org.mo39.fmbh.databasedesign.model.Cmd;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
