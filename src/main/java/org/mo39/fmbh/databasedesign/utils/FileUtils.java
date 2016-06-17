@@ -63,10 +63,6 @@ public class FileUtils {
 
   /**
    * Delete a schema in the archive.
-   * <p>
-   * This function is dangerous. Use it carefully. For example, a schema contains three tables, the
-   * function may delete two but fails at the third one, in which case it merely returns false. Some
-   * more actions are necessary to enforce it's function. //TODO
    *
    * @param schemaName
    * @return true if delete successfully else false.

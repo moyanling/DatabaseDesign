@@ -1,9 +1,11 @@
 package org.mo39.fmbh.databasedesign.test.database;
 
+import org.mo39.fmbh.databasedesign.framework.DatabaseDesign;
+
 public class TestCliHelp {
 
   public static void main(String[] args) {
-    TestMain.main((new String[]{"-h"}));
+    DatabaseDesign.main(new String[]{"-h"});
   }
 
 }

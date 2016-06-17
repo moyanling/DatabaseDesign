@@ -42,18 +42,6 @@ public class Status {
 
   // ------------------------------- protected -------------------------------
 
-  protected static Boolean isAborted;
-  protected static Boolean isIllegalState;
-
-  protected static void clearInternalFlag() {
-    isAborted = null;
-    isIllegalState = null;
-  }
-
-  protected static boolean executionShouldStop() {
-    return isAborted == true || isIllegalState == true;
-  }
-
   /**
    * When the command run is finished, the currentCmd field is set back to null. This is called only
    * in framework.SupportedCmds after the execution of cmd.

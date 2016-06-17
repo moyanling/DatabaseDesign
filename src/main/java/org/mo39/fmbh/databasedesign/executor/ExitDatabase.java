@@ -3,10 +3,10 @@ package org.mo39.fmbh.databasedesign.executor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.mo39.fmbh.databasedesign.framework.DatabaseDesignExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.framework.Status;
 import org.mo39.fmbh.databasedesign.framework.View;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
+import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
 
 public class ExitDatabase implements Executable, Viewable {
 

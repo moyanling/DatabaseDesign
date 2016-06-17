@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.mo39.fmbh.databasedesign.framework.DatabaseDesignExceptions.InvalidNamingConventionException;
+import org.mo39.fmbh.databasedesign.model.DBExceptions.InvalidNamingConventionException;
 
 import com.google.common.collect.Maps;
 

@@ -6,7 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.mo39.fmbh.databasedesign.framework.DatabaseDesign;
-import org.mo39.fmbh.databasedesign.framework.DatabaseDesignExceptions.BadUsageException;
+import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.utils.NamingUtils;
 
 
@@ -63,18 +63,18 @@ public interface Executable {
 
   }
 
-  /**
-   * If this a execution is dangerous, such as drop schema operation, this annotation should be
-   * provided to make the user confirm the operation.
-   *
-   * @author Jihan Chen
-   *
-   */
-  @Target(ElementType.METHOD)
-  @Retention(RetentionPolicy.RUNTIME)
-  public static @interface RequiresConfirm {
-
-  }
+  // /**
+  // * If this a execution is dangerous, such as drop schema operation, this annotation should be
+  // * provided to make the user confirm the operation.
+  // *
+  // * @author Jihan Chen
+  // *
+  // */
+  // @Target(ElementType.METHOD)
+  // @Retention(RetentionPolicy.RUNTIME)
+  // public static @interface RequiresConfirm {
+  //
+  // }
 
   /**
    * //TODO Not implemented yet. Maybe useful for operating in a multi-threads env.<br>

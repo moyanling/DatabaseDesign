@@ -2,9 +2,9 @@ package org.mo39.fmbh.databasedesign.executor;
 
 import java.util.Set;
 
-import org.mo39.fmbh.databasedesign.framework.DatabaseDesignExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.framework.Status;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
+import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.utils.FileUtils;
 import org.mo39.fmbh.databasedesign.utils.NamingUtils;
 
@@ -131,7 +131,6 @@ public abstract class BasicSchemaOperationExecutor {
     }
 
     @Override
-    @RequiresConfirm
     @RequiresActiveSchema
     public void execute() {
       String schemaName = Status.getCurrentSchema();

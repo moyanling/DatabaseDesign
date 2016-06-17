@@ -1,6 +1,6 @@
-package org.mo39.fmbh.databasedesign.framework;
+package org.mo39.fmbh.databasedesign.model;
 
-public abstract class DatabaseDesignExceptions {
+public abstract class DBExceptions {
 
   public static class MissingAnnotationException extends Error {
 
@@ -33,17 +33,6 @@ public abstract class DatabaseDesignExceptions {
     public InvalidNamingConventionException() {}
 
     public InvalidNamingConventionException(String description) {
-      super(description);
-    }
-  }
-
-  public static class AbortOperationException extends RuntimeException {
-
-    private static final long serialVersionUID = 1L;
-
-    public AbortOperationException() {}
-
-    public AbortOperationException(String description) {
       super(description);
     }
   }

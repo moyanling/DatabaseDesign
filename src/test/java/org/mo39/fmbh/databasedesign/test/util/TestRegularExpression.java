@@ -11,11 +11,10 @@ public class TestRegularExpression {
   @Test
   public void testColumnRegx() {
     String arg1 = "column_name1    data_type(size) ";
-    String arg2 = "column_name1   data_type(size)  [primary key|not null] ";
+    String arg2 = "column_name1   data_type(size)  primary key";
     Pattern regx = Pattern.compile("^(.*?)\\s+(.*?)(\\s*?$|\\s+(.*?)\\s*?$)");
     match(regx.matcher(arg1), "");
-    match(regx.matcher(arg2), "[primary key|not null]");
-
+    match(regx.matcher(arg2), "primary key");
   }
 
   private static void match(Matcher m, String expected) {

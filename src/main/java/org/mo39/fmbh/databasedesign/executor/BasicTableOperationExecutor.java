@@ -1,12 +1,15 @@
+
 package org.mo39.fmbh.databasedesign.executor;
 
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.mo39.fmbh.databasedesign.framework.DatabaseDesignExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.framework.Status;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
+import org.mo39.fmbh.databasedesign.model.Constraint;
+import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
+import org.mo39.fmbh.databasedesign.model.DataType;
 import org.mo39.fmbh.databasedesign.utils.FileUtils;
 import org.mo39.fmbh.databasedesign.utils.NamingUtils;
 
@@ -65,7 +68,6 @@ public abstract class BasicTableOperationExecutor {
     }
 
     @Override
-    @RequiresConfirm
     @RequiresActiveSchema
     public void execute() {
       String tableName = NamingUtils.extractAndCheckName(Status.getCurrentCmdStr(), REGEX, 1);
@@ -116,17 +118,32 @@ public abstract class BasicTableOperationExecutor {
       String tableName = matcher.group(1);
       String content = matcher.group(2);
       if (!NamingUtils.checkNamingConventions(tableName)) {
-        throw new BadUsageException("The table name does not follow the naming conventions.");
+        throw new BadUsageException("Bad table name.");
       }
       Pattern columnRegx = Pattern.compile(COLUMN_REGEX);
       for (String col : content.split("\\,")) {
         matcher = columnRegx.matcher(col);
+        // ----------------------
         if (!matcher.matches()) {
           throw new BadUsageException("Bad column definition.");
         }
+        // ----------------------
         String columnName = matcher.group(1).trim();
-        String dataType = matcher.group(2).trim();
-        String constraint = matcher.group(3).trim();
+        if (!NamingUtils.checkNamingConventions(columnName)) {
+          throw new BadUsageException("Bad column name.");
+        }
+        // ----------------------
+        String dataTypeStr = matcher.group(2).trim();
+        DataType dataType = DataType.supports(dataTypeStr);
+        if (dataType != null) {
+          throw new BadUsageException("Unsupported data type.");
+        }
+        // ----------------------
+        String constraintStr = matcher.group(3).trim();
+        Constraint constraint = Constraint.supports(constraintStr);
+        if (constraint != null) {
+          throw new BadUsageException("Unsupported constraint.");
+        }
         // TODO
       }
 
