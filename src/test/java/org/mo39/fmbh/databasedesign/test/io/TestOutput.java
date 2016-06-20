@@ -14,8 +14,8 @@ import org.junit.Test;
 public class TestOutput {
 
   private static final String ROOT_PATH = "src\\test\\resources\\org\\mo39\\fmbh\\databasedesign";
-  private static final Path testByteFile = Paths.get(ROOT_PATH, "testByteFile");
-  private static final Path testVarCharFile = Paths.get(ROOT_PATH, "testVarCharFile");
+  private static final Path TEST_BYTE_FILE = Paths.get(ROOT_PATH, "testByteFile");
+  private static final Path TEST_VAR_CHAR_FILE = Paths.get(ROOT_PATH, "testVarCharFile");
 
   @Test
   public void testRootPath() {
@@ -24,7 +24,10 @@ public class TestOutput {
 
   @Test
   public void testByteOutput() throws Exception {
-    try (OutputStream out = Files.newOutputStream(testByteFile, StandardOpenOption.APPEND)) {
+    if (TEST_BYTE_FILE.toFile().exists()) {
+      TEST_BYTE_FILE.toFile().delete();
+    }
+    try (OutputStream out = Files.newOutputStream(TEST_BYTE_FILE, StandardOpenOption.CREATE)) {
       for (int i = 0; i < 16; i++) {
         out.write(i);
       }
@@ -39,10 +42,13 @@ public class TestOutput {
 
   @Test
   public void testVarCharOutput() throws Exception {
+    if (TEST_VAR_CHAR_FILE.toFile().exists()) {
+      TEST_VAR_CHAR_FILE.toFile().delete();
+    }
     String str = "Hello";
-    try (BufferedWriter bufferedWriter =
-        Files.newBufferedWriter(testVarCharFile, StandardCharsets.US_ASCII,StandardOpenOption.APPEND)) {
-      Files.write(testVarCharFile, new byte[] {(byte) str.length()}, StandardOpenOption.APPEND);
+    try (BufferedWriter bufferedWriter = Files.newBufferedWriter(TEST_VAR_CHAR_FILE,
+        StandardCharsets.US_ASCII, StandardOpenOption.CREATE)) {
+      Files.write(TEST_VAR_CHAR_FILE, new byte[] {(byte) str.length()}, StandardOpenOption.APPEND);
       bufferedWriter.write(str);
     } catch (Exception e) {
       e.printStackTrace();

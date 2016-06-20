@@ -17,8 +17,6 @@ public abstract class Constraint {
   private String regx;
   private String description;
 
-  public abstract
-
   private static List<Constraint> supportedConstraintList;
 
   /**

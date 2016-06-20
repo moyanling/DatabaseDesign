@@ -1,17 +1,20 @@
 
 package org.mo39.fmbh.databasedesign.executor;
 
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.mo39.fmbh.databasedesign.framework.Status;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
-import org.mo39.fmbh.databasedesign.model.Constraint;
+import org.mo39.fmbh.databasedesign.model.Column;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
-import org.mo39.fmbh.databasedesign.model.DataType;
+import org.mo39.fmbh.databasedesign.model.Record;
 import org.mo39.fmbh.databasedesign.utils.FileUtils;
 import org.mo39.fmbh.databasedesign.utils.NamingUtils;
+
+import com.google.common.collect.Lists;
 
 /**
  * A abstract class that collects some basic table operations.
@@ -81,7 +84,7 @@ public abstract class BasicTableOperationExecutor {
           endMessage = "Table - '" + tableName + "' in schema -'" + schemaName + "' is deleted.";
         } else {
           endMessage =
-              "Fails to delete Table - '" + tableName + "' in schema -'" + schemaName + "'";
+              "Fails to delete Table - '" + tableName + "' in schema - '" + schemaName + "'";
         }
       } else {
         endMessage =
@@ -100,7 +103,7 @@ public abstract class BasicTableOperationExecutor {
   public static class CreateTable implements Executable, Viewable {
 
     private static final String REGEX = "^CREATE\\s*?TABLE(.*?)\\((.*)\\)\\s.*?\\;$";
-    private static final String COLUMN_REGEX = "^(.*?)\\s+(.*?)(\\s*?$|\\s+(.*?)\\s*?$)";
+
 
     private String endMessage;
 
@@ -111,6 +114,7 @@ public abstract class BasicTableOperationExecutor {
 
     @Override
     public void execute() {
+      List<Column> columns = Lists.newArrayList();
       Matcher matcher = Pattern.compile(REGEX).matcher(Status.getCurrentCmdStr());
       if (!matcher.matches()) {
         throw new BadUsageException("No table or column definition is found.");
@@ -120,34 +124,12 @@ public abstract class BasicTableOperationExecutor {
       if (!NamingUtils.checkNamingConventions(tableName)) {
         throw new BadUsageException("Bad table name.");
       }
-      Pattern columnRegx = Pattern.compile(COLUMN_REGEX);
       for (String col : content.split("\\,")) {
-        matcher = columnRegx.matcher(col);
-        // ----------------------
-        if (!matcher.matches()) {
-          throw new BadUsageException("Bad column definition.");
-        }
-        // ----------------------
-        String columnName = matcher.group(1).trim();
-        if (!NamingUtils.checkNamingConventions(columnName)) {
-          throw new BadUsageException("Bad column name.");
-        }
-        // ----------------------
-        String dataTypeStr = matcher.group(2).trim();
-        DataType dataType = DataType.supports(dataTypeStr);
-        if (dataType != null) {
-          throw new BadUsageException("Unsupported data type.");
-        }
-        // ----------------------
-        String constraintStr = matcher.group(3).trim();
-        Constraint constraint = Constraint.supports(constraintStr);
-        if (constraint != null) {
-          throw new BadUsageException("Unsupported constraint.");
-        }
-        // TODO
+        columns.add(Column.newColumnDefinition(col));
       }
-
-
+      Record record = new Record(tableName, columns);
+      record.writeToTable();
+      endMessage = "Table - '" + tableName + "' is Created.";
     }
 
   }

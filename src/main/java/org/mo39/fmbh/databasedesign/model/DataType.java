@@ -3,7 +3,9 @@ package org.mo39.fmbh.databasedesign.model;
 import java.util.Collections;
 import java.util.List;
 
-public class DataType {
+public abstract class DataType {
+
+  public abstract Object parse(Object obj);
 
   private static List<DataType> supportedDataTypeList;
 
@@ -23,6 +25,26 @@ public class DataType {
 
   public static void setDataTypeList(List<DataType> supportedDataTypeList) {
     DataType.supportedDataTypeList = Collections.unmodifiableList(supportedDataTypeList);
+  }
+
+  public static class Primary extends DataType {
+
+    @Override
+    public Object parse(Object obj) {
+      // TODO Auto-generated method stub
+      return null;
+    }
+
+  }
+
+  public static class NotNull extends DataType {
+
+    @Override
+    public Object parse(Object obj) {
+      // TODO Auto-generated method stub
+      return null;
+    }
+
   }
 
 }

@@ -21,9 +21,8 @@ public abstract class NamingUtils {
   /**
    * The group index for regular expression.
    */
-  private static final int SCHEMA = 1;
-  private static final int TABLE = 2;
-  private static final int COLUMN = 3;
+  private static final int TABLE = 1;
+  private static final int COLUMN = 2;
 
   /**
    * A compiled regex pattern for naming convention.
@@ -34,23 +33,13 @@ public abstract class NamingUtils {
   /**
    * A compiled regex pattern for .tbl file naming convention.
    */
-  private static final Pattern TBL_FILE_NAMING_CONVENTION = Pattern.compile("(.*?)\\.(.*?)\\.tbl");
+  private static final Pattern TBL_FILE_NAMING_CONVENTION = Pattern.compile("(.*?)\\.tbl");
 
   /**
    * A compiled regex pattern for .ndx file naming convention.
    */
   private static final Pattern NDX_FILE_NAMING_CONVENTION =
-      Pattern.compile("(.*?)\\.(.*?)\\.(.*?)\\.ndx");
-
-  /**
-   * infer schema name from .tbl file.
-   *
-   * @param tableFileName
-   * @return
-   */
-  public static String inferSchemaFromtbl(String tblFileName) {
-    return inferFrom(tblFileName, SCHEMA, TBL_FILE_NAMING_CONVENTION);
-  }
+      Pattern.compile("(.*?)\\.(.*?)\\.ndx");
 
   /**
    * infer table name fomr .tbl file
@@ -60,16 +49,6 @@ public abstract class NamingUtils {
    */
   public static String inferTableFromtbl(String tblFileName) {
     return inferFrom(tblFileName, TABLE, TBL_FILE_NAMING_CONVENTION);
-  }
-
-  /**
-   * infer schema name from .ndx file
-   *
-   * @param ndxFileName
-   * @return
-   */
-  public static String inferSchemaFromndx(String ndxFileName) {
-    return inferFrom(ndxFileName, SCHEMA, NDX_FILE_NAMING_CONVENTION);
   }
 
   /**

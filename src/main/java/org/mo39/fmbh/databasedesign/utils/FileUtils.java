@@ -1,6 +1,5 @@
 package org.mo39.fmbh.databasedesign.utils;
 
-import static org.mo39.fmbh.databasedesign.utils.NamingUtils.inferSchemaFromtbl;
 import static org.mo39.fmbh.databasedesign.utils.NamingUtils.inferTableFromtbl;
 
 import java.io.File;
@@ -34,8 +33,8 @@ public class FileUtils {
    * @return A unmodifiable list containing strings as the tbl file name.
    *         {@link Collections#unmodifiableList}
    */
-  public static List<String> gettblFileList() {
-    return getFileList(TBL_FILE);
+  public static List<String> gettblFileList(String schema) {
+    return getFileList(schema, TBL_FILE);
   }
 
   /**
@@ -44,8 +43,8 @@ public class FileUtils {
    * @return A unmodifiable list containing strings as the ndx file name.
    *         {@link Collections#unmodifiableList}
    */
-  public static List<String> getndxFileList() {
-    return getFileList(NDX_FILE);
+  public static List<String> getndxFileList(String schema) {
+    return getFileList(schema, NDX_FILE);
   }
 
   /**
@@ -56,8 +55,8 @@ public class FileUtils {
    * @return true if delete successfully else false.
    */
   public static boolean deleteTable(String schemaName, String tableName) {
-    String fileName = schemaName + "." + tableName + ".tbl";
-    Path path = Paths.get(ARCHIVE_ROOT, fileName);
+    String fileName = tableName + ".tbl";
+    Path path = Paths.get(ARCHIVE_ROOT, schemaName, fileName);
     return path.toFile().delete();
   }
 
@@ -67,15 +66,14 @@ public class FileUtils {
    * @param schemaName
    * @return true if delete successfully else false.
    */
-  public static boolean deleteSchema(String schemaName) {
-    for (String tblFileName : gettblFileList()) {
-      if (tblFileName.startsWith(schemaName)) {
-        if (!Paths.get(ARCHIVE_ROOT, tblFileName).toFile().delete()) {
-          return false;
-        }
+  public static boolean deleteSchema(String schema) {
+    for (String tblFileName : gettblFileList(schema)) {
+      if (!Paths.get(ARCHIVE_ROOT, schema, tblFileName).toFile().delete()) {
+        return false;
       }
     }
-    return true;
+    return Paths.get(ARCHIVE_ROOT, schema).toFile().delete();
+
   }
 
   /**
@@ -85,11 +83,14 @@ public class FileUtils {
    *         {@link Collections#unmodifiableSet}
    */
   public static Set<String> getSchemas() {
-    Set<String> set = Sets.newHashSet();
-    for (String tbl : gettblFileList()) {
-      set.add(inferSchemaFromtbl(tbl));
+    Set<String> schemas = Sets.newHashSet();
+    File[] files = new File(ARCHIVE_ROOT).listFiles();
+    for (File file : files) {
+      if (file.isDirectory()) {
+        schemas.add(file.getName());
+      }
     }
-    return Collections.unmodifiableSet(set);
+    return schemas;
   }
 
   /**
@@ -99,12 +100,10 @@ public class FileUtils {
    * @return A unmodifiable set containing all tables in the archive.
    *         {@link Collections#unmodifiableSet}
    */
-  public static Set<String> getTables(String schemaName) {
+  public static Set<String> getTables(String schema) {
     Set<String> set = Sets.newHashSet();
-    for (String tbl : gettblFileList()) {
-      if (schemaName.equals(inferSchemaFromtbl(tbl))) {
-        set.add(inferTableFromtbl(tbl));
-      }
+    for (String tbl : gettblFileList(schema)) {
+      set.add(inferTableFromtbl(tbl));
     }
     return Collections.unmodifiableSet(set);
   }
@@ -114,18 +113,17 @@ public class FileUtils {
    * @param pattern
    * @return
    */
-  private static List<String> getFileList(Pattern pattern) {
-    List<String> tableFileList = Lists.newArrayList();
-    File file = new File(ARCHIVE_ROOT);
-    File fileList[] = file.listFiles();
-    for (int i = 0; i < fileList.length; i++) {
-      if (fileList[i].isFile()) {
-        if (pattern.matcher(fileList[i].getName()).matches()) {
-          tableFileList.add(fileList[i].getName());
+  private static List<String> getFileList(String schema, Pattern pattern) {
+    List<String> fileList = Lists.newArrayList();
+    File[] files = Paths.get(ARCHIVE_ROOT, schema).toFile().listFiles();
+    for (File file : files) {
+      if (file.isFile()) {
+        if (pattern.matcher(file.getName()).matches()) {
+          fileList.add(file.getName());
         }
       }
     }
-    return Collections.unmodifiableList(tableFileList);
+    return Collections.unmodifiableList(fileList);
   }
 
 }

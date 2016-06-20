@@ -116,12 +116,12 @@ public abstract class BasicSchemaOperationExecutor {
   }
 
   /**
-   * Drop the currently activated schema, including all tables belong to this schema.
+   * Delete the currently activated schema, including all tables belong to this schema.
    *
    * @author Jihan Chen
    *
    */
-  public static class DropSchema implements Executable, Viewable {
+  public static class DeleteSchema implements Executable, Viewable {
 
     private String endMessage;
 
