@@ -20,6 +20,16 @@ public abstract class Constraint {
   private static List<Constraint> supportedConstraintList;
 
   /**
+   * Impose the constraint to a certain column. The implementation varies according to the subclass.
+   *
+   * @param schema
+   * @param table
+   * @param col
+   * @return {@code true} if the column observes the constraint, otherwise {@code false}
+   */
+  public abstract boolean impose(String schema, String table, Column col);
+
+  /**
    * Check whether input string is a supported constraint. Does not support more than one
    * constraint, i.e. Constraint#supports("PRIMARY KEY NOT NULL") returns false.
    *
@@ -67,6 +77,26 @@ public abstract class Constraint {
 
   public void setDescription(String description) {
     this.description = description;
+  }
+
+  public static class Primary extends Constraint {
+
+    @Override
+    public boolean impose(String schema, String table, Column col) {
+      // TODO Auto-generated method stub
+      return false;
+    }
+
+  }
+
+  public static class NotNull extends Constraint {
+
+    @Override
+    public boolean impose(String schema, String table, Column col) {
+      // TODO Auto-generated method stub
+      return false;
+    }
+
   }
 
 }

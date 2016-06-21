@@ -21,7 +21,7 @@ import com.google.common.collect.Sets;
  * @author Jihan Chen
  *
  */
-public class FileUtils {
+public abstract class FileUtils {
 
   private static final String ARCHIVE_ROOT = ".\\archive";
   private static final Pattern NDX_FILE = Pattern.compile(".*\\.ndx");

@@ -13,76 +13,81 @@
 	   	http://www.springframework.org/schema/util 
 		http://www.springframework.org/schema/util/spring-util.xsd
 		">
-
+	
+	<!-- The regular expression here is supposed to check the command only. Do not parse the command. -->
 	<util:list id="supportedCmdList">
-		<!-- The regular expression here is supposed to check the command only. Do not parse the command. -->
+	
+		<!-- Schema Operation -->
 		<bean id="showSchemas" class="org.mo39.fmbh.databasedesign.model.Cmd">
 			<property name="name" value="SHOW SCHEMAS;" />
 			<property name="regx" value="^SHOW\s+SCHEMAS.*?\;$" />
-			<property name="description" value="- Displays all schemas defined in your database." />
+			<property name="description" value="Displays all schemas defined in your database." />
 			<property name="executorClassName" value="org.mo39.fmbh.databasedesign.executor.BasicSchemaOperationExecutor$ShowSchemas" />
 		</bean>
 		
 		<bean id="deleteSchema" class="org.mo39.fmbh.databasedesign.model.Cmd">
 			<property name="name" value="DELETE SCHEMA;" />
 			<property name="regx" value="^DELETE\s+SCHEMA\s*?\;$" />
-			<property name="description" value="- Remove the current activated schema from the archive, and all of its containing tables. Use it carefully." />
+			<property name="description" value="Remove the current activated schema from the archive, and all of its containing tables. Use it carefully." />
 			<property name="executorClassName" value="org.mo39.fmbh.databasedesign.executor.BasicSchemaOperationExecutor$DeleteSchema" />
 		</bean>
 	
 		<bean id="use" class="org.mo39.fmbh.databasedesign.model.Cmd">
 			<property name="name" value="USE &lt;SCHEMA_NAME&gt;;" />
 			<property name="regx" value="^USE.*?\;$" />
-			<property name="description" value="- Chooses a schema." />
+			<property name="description" value="Chooses a schema." />
 			<property name="executorClassName" value="org.mo39.fmbh.databasedesign.executor.BasicSchemaOperationExecutor$Use" />
 		</bean>
 	
 		<bean id="createSchema" class="org.mo39.fmbh.databasedesign.model.Cmd">
 			<property name="name" value="CREATE SCHEMA &lt;SCHEMA_NAME&gt;;" />
 			<property name="regx" value="^CREATE\s+SCHEMA.*?\;$" />
-			<property name="description" value="- Creates a new schema to hold tables." />
+			<property name="description" value="Creates a new schema to hold tables." />
 			<property name="executorClassName" value="org.mo39.fmbh.databasedesign.executor.BasicSchemaOperationExecutor$CreateSchema" />
 		</bean>
 		
+		<!-- Table operation -->
 		<bean id="showTables" class="org.mo39.fmbh.databasedesign.model.Cmd">
 			<property name="name" value="SHOW TABLES;" />
 			<property name="regx" value="^SHOW\s+TABLES\s*?\;$" />
-			<property name="description" value="- Displays all tables in the currently chosen schema." />
+			<property name="description" value="Displays all tables in the currently chosen schema." />
 			<property name="executorClassName" value="org.mo39.fmbh.databasedesign.executor.BasicTableOperationExecutor$ShowTables" />
 		</bean>
 	
 		<bean id="dropTable" class="org.mo39.fmbh.databasedesign.model.Cmd">
 			<property name="name" value="DROP TABLE &lt;TABLE_NAME&gt;;" />
 			<property name="regx" value="^DROP\s+TABLE.*?\;$" />
-			<property name="description" value="- Remove a table in current schema, and all of its contained data." />
+			<property name="description" value="Remove a table in current schema, and all of its contained data." />
 			<property name="executorClassName" value="org.mo39.fmbh.databasedesign.executor.BasicTableOperationExecutor$DropTable" />
 		</bean>
 	
 		<bean id="createTable" class="org.mo39.fmbh.databasedesign.model.Cmd">
 			<property name="name" value="CREATE TABLE &lt;TABLE_NAME&gt;;" />
 			<property name="regx" value="^CREATE\s+TABLE.*?\;$" />
-			<property name="description" value="- Creates a new table schema, i.e. a new empty table." />
+			<property name="description" value="Creates a new table schema, i.e. a new empty table." />
 			<property name="executorClassName" value="org.mo39.fmbh.databasedesign.executor.BasicTableOperationExecutor$CreateTable" />
 		</bean>
 	
+		<!-- Record Operation -->
 		<bean id="insertIntoTable" class="org.mo39.fmbh.databasedesign.model.Cmd">
 			<property name="name" value="INSERT INTO TABLE ... ;" />
 			<property name="regx" value="^INSERT\s+INTO\s+TABLE.*?\;$" />
-			<property name="description" value="- Inserts a row/record into a table." />
+			<property name="description" value="Inserts a row/record into a table." />
 			<property name="executorClassName" value="insertIntoTable" />
 		</bean>
 	
 		<bean id="select" class="org.mo39.fmbh.databasedesign.model.Cmd">
 			<property name="name" value="SELECT ... ;" />
 			<property name="regx" value="^SELECT\s+.*?FROM\s+.*?\;$" />
-			<property name="description" value="- SELECT-FROM-WHERE style query " />
+			<property name="description" value="SELECT-FROM-WHERE style query " />
 			<property name="executorClassName" value="select" />
 		</bean>
 	
+		<!-- Exit -->
 		<bean id="exit" class="org.mo39.fmbh.databasedesign.model.Cmd">
 			<property name="name" value="EXIT;" />
 			<property name="regx" value="^EXIT.*?\;$" />
-			<property name="description" value="- Cleanly exits the program and saves all table and index information in non-volatile files." />
+			<property name="description" value="Cleanly exits the program and saves all table and index information in non-volatile files." />
 			<property name="executorClassName" value="org.mo39.fmbh.databasedesign.executor.ExitDatabase" />
 		</bean>
 	</util:list>

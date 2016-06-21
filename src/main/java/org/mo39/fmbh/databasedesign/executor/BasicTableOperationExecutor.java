@@ -45,8 +45,8 @@ public abstract class BasicTableOperationExecutor {
     public void execute() {
       Set<String> tableSet = FileUtils.getTables(Status.getCurrentSchema());
       StringBuilder sb = new StringBuilder("Show Tables: ");
-      for (String tableName : tableSet) {
-        sb.append("\n\t" + tableName + "\n");
+      for (String table : tableSet) {
+        sb.append("\n\t" + table + "\n");
       }
       endMessage = sb.toString();
     }
@@ -73,18 +73,17 @@ public abstract class BasicTableOperationExecutor {
     @Override
     @RequiresActiveSchema
     public void execute() {
-      String tableName = NamingUtils.extractAndCheckName(Status.getCurrentCmdStr(), REGEX, 1);
-      if (tableName == null) {
+      String table = NamingUtils.extractAndCheckName(Status.getCurrentCmdStr(), REGEX, 1);
+      if (table == null) {
         throw new BadUsageException();
       }
-      String schemaName = Status.getCurrentSchema();
-      Set<String> tableSet = FileUtils.getTables(schemaName);
-      if (tableSet.contains(tableName)) {
-        if (FileUtils.deleteTable(schemaName, tableName)) {
-          endMessage = "Table - '" + tableName + "' in schema -'" + schemaName + "' is deleted.";
+      String schema = Status.getCurrentSchema();
+      Set<String> tableSet = FileUtils.getTables(schema);
+      if (tableSet.contains(table)) {
+        if (FileUtils.deleteTable(schema, table)) {
+          endMessage = "Table - '" + table + "' in schema -'" + schema + "' is deleted.";
         } else {
-          endMessage =
-              "Fails to delete Table - '" + tableName + "' in schema - '" + schemaName + "'";
+          endMessage = "Fails to delete Table - '" + table + "' in schema - '" + schema + "'";
         }
       } else {
         endMessage =
@@ -119,17 +118,17 @@ public abstract class BasicTableOperationExecutor {
       if (!matcher.matches()) {
         throw new BadUsageException("No table or column definition is found.");
       }
-      String tableName = matcher.group(1);
+      String table = matcher.group(1);
       String content = matcher.group(2);
-      if (!NamingUtils.checkNamingConventions(tableName)) {
+      if (!NamingUtils.checkNamingConventions(table)) {
         throw new BadUsageException("Bad table name.");
       }
       for (String col : content.split("\\,")) {
         columns.add(Column.newColumnDefinition(col));
       }
-      Record record = new Record(tableName, columns);
+      Record record = Record.newTemplate(Status.getCurrentSchema(), table, columns);
       record.writeToTable();
-      endMessage = "Table - '" + tableName + "' is Created.";
+      endMessage = "Table - '" + table + "' is Created.";
     }
 
   }

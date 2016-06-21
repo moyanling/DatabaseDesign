@@ -9,13 +9,13 @@ import org.mo39.fmbh.databasedesign.utils.NamingUtils;
 public class Column {
 
   private String name;
-  private DataType dataType;
+  private DataType<?> dataType;
   private Constraint constraint;
   private Object value;
 
   private static final String COLUMN_DEFINITION = "^(.*?)\\s+(.*?)(\\s*?$|\\s+(.*?)\\s*?$)";
 
-  public Column(String name, DataType dataType, Constraint constraint, Object value) {
+  public Column(String name, DataType<?> dataType, Constraint constraint, Object value) {
     this.name = name;
     this.value = value;
     this.dataType = dataType;
@@ -37,7 +37,7 @@ public class Column {
     }
     // ----------------------
     String dataTypeStr = matcher.group(2).trim();
-    DataType dataType = DataType.supports(dataTypeStr);
+    DataType<?> dataType = DataType.supports(dataTypeStr);
     if (dataType == null) {
       throw new BadUsageException("Unsupported data type.");
     }
@@ -58,11 +58,11 @@ public class Column {
     this.name = name;
   }
 
-  public DataType getDataType() {
+  public DataType<?> getDataType() {
     return dataType;
   }
 
-  public void setDataType(DataType dataType) {
+  public void setDataType(DataType<?> dataType) {
     this.dataType = dataType;
   }
 

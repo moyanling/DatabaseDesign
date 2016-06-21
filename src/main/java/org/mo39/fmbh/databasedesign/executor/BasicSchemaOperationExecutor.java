@@ -84,7 +84,7 @@ public abstract class BasicSchemaOperationExecutor {
   /**
    * Create a specified schema. If no table is created in this schema, the schema will not be saved.
    *
-   * @author chen39
+   * @author Jihan Chen
    *
    */
   public static class CreateSchema implements Executable, Viewable {

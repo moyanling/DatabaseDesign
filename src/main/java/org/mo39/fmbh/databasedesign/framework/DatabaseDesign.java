@@ -77,10 +77,20 @@ public class DatabaseDesign {
    *
    * @param dbDesign
    */
+  @SuppressWarnings("rawtypes")
   public static void optionAll(DatabaseDesign dbDesign) {
-    StringBuilder sb = new StringBuilder("Supported commands: \n\n");
+    StringBuilder sb = new StringBuilder();
+    sb.append("Supported commands: \n\n");
     for (Cmd cmd : Cmd.getCmdList()) {
-      sb.append("\t" + cmd.getName() + " \n\t\t" + cmd.getDescription() + "\n\n");
+      sb.append("\t" + cmd.getName() + " \n\t\t- " + cmd.getDescription() + "\n\n");
+    }
+    sb.append("Supported Data Types: \n\n");
+    for (DataType type : DataType.getDataTypeList()) {
+      sb.append("\t" + type.getName() + " \n\t\t- " + type.getDescription() + "\n\n");
+    }
+    sb.append("Supported constraints: \n\n");
+    for (Constraint constraint : Constraint.getConstraintList()) {
+      sb.append("\t" + constraint.getName() + " \n\t\t- " + constraint.getDescription() + "\n\n");
     }
     sb.append(dbDesign.getSystemProperties().get("usageInstruction"));
     View.newView(sb.toString());
@@ -130,7 +140,7 @@ public class DatabaseDesign {
     return true;
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public static void main(String[] args) {
     @SuppressWarnings("resource")
     ApplicationContext ctx = new ClassPathXmlApplicationContext("applicationContext.xml");
