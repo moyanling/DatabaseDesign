@@ -21,10 +21,6 @@
 	<context:property-placeholder location="classpath:SystemProperties.properties" />
 	<context:component-scan base-package="org.mo39.fmbh.databasedesign.framework" />
 
-	<bean id="databaseDesign" class="org.mo39.fmbh.databasedesign.framework.DatabaseDesign">
-		<property name="systemProperties" ref="systemProperties" />
-	</bean>
-
 	<util:map id="systemProperties">
 		<entry key="prompt" value="${info.prompt}" />
 		<entry key="welcome" value="${info.welcome}" />

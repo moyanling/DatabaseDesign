@@ -1,6 +1,7 @@
 
 package org.mo39.fmbh.databasedesign.executor;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -10,7 +11,6 @@ import org.mo39.fmbh.databasedesign.framework.Status;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
 import org.mo39.fmbh.databasedesign.model.Column;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
-import org.mo39.fmbh.databasedesign.model.Record;
 import org.mo39.fmbh.databasedesign.utils.FileUtils;
 import org.mo39.fmbh.databasedesign.utils.NamingUtils;
 
@@ -45,10 +45,14 @@ public abstract class BasicTableOperationExecutor {
     public void execute() {
       Set<String> tableSet = FileUtils.getTables(Status.getCurrentSchema());
       StringBuilder sb = new StringBuilder("Show Tables: ");
-      for (String table : tableSet) {
-        sb.append("\n\t" + table + "\n");
+      if (tableSet.size() == 0) {
+        sb.append("\n\tNone");
+      } else {
+        for (String table : tableSet) {
+          sb.append("\n\t" + table + "\n");
+        }
       }
-      endMessage = sb.toString();
+      endMessage = sb.substring(0, sb.length() - 1).toString();
     }
 
   }
@@ -62,7 +66,7 @@ public abstract class BasicTableOperationExecutor {
   public static class DropTable implements Executable, Viewable {
 
     private String endMessage;
-    private static final String REGEX = "^DROP\\s*?TABLE(.*?)\\;$";
+    private static final String REGEX = "^DROP\\s*?TABLE\\s(.*?)\\;$";
 
 
     @Override
@@ -101,8 +105,7 @@ public abstract class BasicTableOperationExecutor {
    */
   public static class CreateTable implements Executable, Viewable {
 
-    private static final String REGEX = "^CREATE\\s*?TABLE(.*?)\\((.*)\\)\\s.*?\\;$";
-
+    private static final String REGEX = "^CREATE\\s*?TABLE\\s(.*?)\\s\\((.*)\\)\\s*?\\;$";
 
     private String endMessage;
 
@@ -112,9 +115,11 @@ public abstract class BasicTableOperationExecutor {
     }
 
     @Override
-    public void execute() {
+    @RequiresActiveSchema
+    public void execute() throws IOException {
       List<Column> columns = Lists.newArrayList();
-      Matcher matcher = Pattern.compile(REGEX).matcher(Status.getCurrentCmdStr());
+      Matcher matcher =
+          Pattern.compile(REGEX, Pattern.CASE_INSENSITIVE).matcher(Status.getCurrentCmdStr());
       if (!matcher.matches()) {
         throw new BadUsageException("No table or column definition is found.");
       }
@@ -126,9 +131,16 @@ public abstract class BasicTableOperationExecutor {
       for (String col : content.split("\\,")) {
         columns.add(Column.newColumnDefinition(col));
       }
-      Record record = Record.newTemplate(Status.getCurrentSchema(), table, columns);
-      record.writeToTable();
-      endMessage = "Table - '" + table + "' is Created.";
+      String schema = Status.getCurrentSchema();
+      if (FileUtils.getTables(schema).contains(table)) {
+        endMessage = "Table - '" + table + "' already exists.";
+        return;
+      }
+      if (FileUtils.createtblFile(schema, table, columns)) {
+        endMessage = "Table - '" + table + "' is Created.";
+      } else {
+        endMessage = "Fails to create Table - '" + table + "'.";
+      }
     }
 
   }

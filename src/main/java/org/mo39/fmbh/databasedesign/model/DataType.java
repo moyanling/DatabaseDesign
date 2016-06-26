@@ -5,13 +5,13 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.google.common.base.Preconditions;
+
 public abstract class DataType<T> {
 
   private String name;
   private String regx;
   private String description;
-
-  public abstract T defaultVlaue();
 
   @SuppressWarnings("rawtypes")
   private static List<DataType> supportedDataTypeList;
@@ -23,6 +23,7 @@ public abstract class DataType<T> {
    */
   @SuppressWarnings("rawtypes")
   public static DataType supports(String arg) {
+    Preconditions.checkArgument(arg != null);
     for (DataType type : DataType.supportedDataTypeList) {
       Pattern regx = Pattern.compile(type.regx, Pattern.CASE_INSENSITIVE);
       Matcher matcher = regx.matcher(arg);
@@ -69,27 +70,13 @@ public abstract class DataType<T> {
 
   public static class DbInt extends DataType<Integer> {
 
-    @Override
-    public Integer defaultVlaue() {
-      return -1;
-    }
-
   }
 
   public static class DbByte extends DataType<Byte> {
 
-    @Override
-    public Byte defaultVlaue() {
-      return -1;
-    }
-
   }
   public static class DbVarChar extends DataType<Character[]> {
 
-    @Override
-    public Character[] defaultVlaue() {
-      return new Character[]{'\0'};
-    }
 
   }
 

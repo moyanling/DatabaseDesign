@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.google.common.base.Preconditions;
+
 /**
  * Constraint class. It currently only supports "PRIMARY KEY" and "NOT NULL".
  *
@@ -37,6 +39,14 @@ public abstract class Constraint {
    * @return
    */
   public static Constraint supports(String arg) {
+    Preconditions.checkArgument(arg != null);
+    if (arg.equals("")) {
+      Constraint nc = new NoConstraint();
+      nc.setDescription("No constraint is specified for this column");
+      nc.setName("NO CONSTRAINT");
+      nc.setRegx("N\\\\A");
+      return nc;
+    }
     for (Constraint cons : Constraint.supportedConstraintList) {
       Pattern regx = Pattern.compile(cons.regx, Pattern.CASE_INSENSITIVE);
       Matcher matcher = regx.matcher(arg);
@@ -79,7 +89,7 @@ public abstract class Constraint {
     this.description = description;
   }
 
-  public static class Primary extends Constraint {
+  public static class PrimaryKey extends Constraint {
 
     @Override
     public boolean impose(String schema, String table, Column col) {
@@ -95,6 +105,21 @@ public abstract class Constraint {
     public boolean impose(String schema, String table, Column col) {
       // TODO Auto-generated method stub
       return false;
+    }
+
+  }
+
+  /**
+   * Indicates that no constraint is specified for the column.
+   * 
+   * @author Jihan Chen
+   *
+   */
+  public static class NoConstraint extends Constraint {
+
+    @Override
+    public boolean impose(String schema, String table, Column col) {
+      return true;
     }
 
   }

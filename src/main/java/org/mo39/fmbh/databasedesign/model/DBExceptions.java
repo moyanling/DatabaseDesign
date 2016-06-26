@@ -37,4 +37,15 @@ public abstract class DBExceptions {
     }
   }
 
+  public static class InvalidInformationSchemaException extends RuntimeException {
+
+    private static final long serialVersionUID = 1L;
+
+    public InvalidInformationSchemaException() {}
+
+    public InvalidInformationSchemaException(String description) {
+      super(description);
+    }
+  }
+
 }

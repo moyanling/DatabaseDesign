@@ -1,4 +1,4 @@
-package org.mo39.fmbh.databasedesign.test.io;
+package org.mo39.fmbh.databasedesign.test.util;
 
 import java.io.BufferedWriter;
 import java.io.OutputStream;

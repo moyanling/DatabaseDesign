@@ -30,7 +30,7 @@
 		
 		<bean id="varChar" class="org.mo39.fmbh.databasedesign.model.DataType$DbVarChar">
 			<property name="name" value="VARCHAR"/>
-			<property name="regx" value="VARCHAR"/>
+			<property name="regx" value="VARCHAR\([0-9]+\)"/>
 			<property name="description" value="A variable length ASCII string with a maximum of n characters. n may be 0-127. Each instance is prepended with an unsigned byte indicating the number of ASCII characters that follow." />
 		</bean>
 		

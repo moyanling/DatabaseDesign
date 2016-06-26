@@ -2,7 +2,7 @@ package org.mo39.fmbh.databasedesign.model;
 
 import java.util.List;
 
-import org.mo39.fmbh.databasedesign.utils.IOUtils;
+import org.mo39.fmbh.databasedesign.utils.TblUtils;
 
 public class Record {
 
@@ -27,7 +27,7 @@ public class Record {
   }
 
   public void writeToTable() {
-    IOUtils.writeRecord(this);
+    TblUtils.writeRecord(this);
   }
 
   private Record(String schema, String table, List<Column> columns) {

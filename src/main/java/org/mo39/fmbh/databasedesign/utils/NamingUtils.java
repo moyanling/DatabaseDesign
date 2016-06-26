@@ -1,22 +1,24 @@
 package org.mo39.fmbh.databasedesign.utils;
 
-import java.util.Collections;
-import java.util.Map;
+import static org.mo39.fmbh.databasedesign.framework.SystemProperties.DELIMITER;
+import static org.mo39.fmbh.databasedesign.framework.SystemProperties.LINE_BREAK;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.mo39.fmbh.databasedesign.framework.SystemProperties;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.InvalidNamingConventionException;
 
-import com.google.common.collect.Maps;
+import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 
 public abstract class NamingUtils {
 
   /**
-   * Reusable reference. In each method that uses regulare expression, these will be assigned and
-   * refered.
+   * Convenient reusable reference. In each method that uses regular expression, these will be
+   * assigned and referred.
    */
   private static Matcher matcher;
-  private static String group;
 
   /**
    * The group index for regular expression.
@@ -38,16 +40,25 @@ public abstract class NamingUtils {
   /**
    * A compiled regex pattern for .ndx file naming convention.
    */
-  private static final Pattern NDX_FILE_NAMING_CONVENTION =
-      Pattern.compile("(.*?)\\.(.*?)\\.ndx");
+  private static final Pattern NDX_FILE_NAMING_CONVENTION = Pattern.compile("(.*?)\\.(.*?)\\.ndx");
 
   /**
-   * infer table name fomr .tbl file
+   * Return a line of string joined by the {@link SystemProperties#DELIMITER}
+   * 
+   * @param objects
+   * @return
+   */
+  public static String join(Object... objects) {
+    return Joiner.on(DELIMITER).join(objects) + LINE_BREAK;
+  }
+  
+  /**
+   * infer table name from .tbl file
    *
    * @param tblFileName
    * @return
    */
-  public static String inferTableFromtbl(String tblFileName) {
+  public static final String inferTableFromtbl(String tblFileName) {
     return inferFrom(tblFileName, TABLE, TBL_FILE_NAMING_CONVENTION);
   }
 
@@ -57,7 +68,7 @@ public abstract class NamingUtils {
    * @param ndxFileName
    * @return
    */
-  public static String inferTableFromndx(String ndxFileName) {
+  public static final String inferTableFromndx(String ndxFileName) {
     return inferFrom(ndxFileName, TABLE, NDX_FILE_NAMING_CONVENTION);
   }
 
@@ -67,30 +78,8 @@ public abstract class NamingUtils {
    * @param ndxFileName
    * @return
    */
-  public static String inferColumnFromndx(String ndxFileName) {
+  public static final String inferColumnFromndx(String ndxFileName) {
     return inferFrom(ndxFileName, COLUMN, NDX_FILE_NAMING_CONVENTION);
-  }
-
-  /**
-   * This function uses a regular expression to check the input name. The name could be schema,
-   * table or column name. This should be used when the name is read from the archive other than
-   * input by the user. When the name is an input from the user, use {@link checkNamingConventions}
-   * instead.
-   * <p>
-   * By doing so, the input would follow the conventions so there should be no invalid name in
-   * archive after saving the users' input. In other words, a input name not following a naming
-   * convention is considered a bad usage and would be aborted. But if a invalid naming convention
-   * is detected when reading files in the archive, it should be considered a server Error.
-   *
-   * @param name
-   * @return
-   */
-  protected static boolean checkNamingConventionsWithException(String name) {
-    if (NAMING_CONVENTION.matcher(name).matches()) {
-      return true;
-    } else {
-      throw new InvalidNamingConventionException("Invalid naming convention when checking " + name);
-    }
   }
 
   /**
@@ -101,7 +90,8 @@ public abstract class NamingUtils {
    * @param name
    * @return
    */
-  public static boolean checkNamingConventions(String name) {
+  public static final boolean checkNamingConventions(String name) {
+    Preconditions.checkArgument(name != null);
     return NAMING_CONVENTION.matcher(name).matches();
   }
 
@@ -130,59 +120,36 @@ public abstract class NamingUtils {
     return null;
   }
 
-  /**
-   * Decompose the name of schema and table from a tbl file.
-   *
-   * @param tableFileName
-   * @return A unmodifiable map that contains schema and table. {@link Collections.unmodifiableMap}
-   */
-  public static Map<String, String> decomposeTableFileName(String tableFileName) {
-    if ((matcher = TBL_FILE_NAMING_CONVENTION.matcher(tableFileName)).matches()) {
-      Map<String, String> toRet = Maps.newHashMap();
-      if (checkNamingConventionsWithException(group = matcher.group(1))) {
-        toRet.put("schema", group);
-        if (checkNamingConventionsWithException(group = matcher.group(2))) {
-          toRet.put("table", group);
-          return Collections.unmodifiableMap(toRet);
-        }
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Decompose the name of schema ,table and column name from a ndx file.
-   *
-   * @param ndxFileName
-   * @return A unmodifiable map that contains schema, table and column.
-   *         {@link Collections.unmodifiableMap}
-   */
-  public static Map<String, String> decomposeIndexFileName(String ndxFileName) {
-    if ((matcher = NDX_FILE_NAMING_CONVENTION.matcher(ndxFileName)).matches()) {
-      Map<String, String> toRet = Maps.newHashMap();
-      if (checkNamingConventionsWithException(group = matcher.group(1))) {
-        toRet.put("schema", group);
-        if (checkNamingConventionsWithException(group = matcher.group(2))) {
-          toRet.put("table", group);
-          if (checkNamingConventionsWithException(group = matcher.group(3))) {
-            toRet.put("column", group);
-            return toRet;
-          }
-        }
-      }
-    }
-    return null;
-  }
-
   private static String inferFrom(String fileName, int groupNumber, Pattern pattern) {
+    Preconditions.checkArgument(fileName != null && pattern != null);
     if ((matcher = pattern.matcher(fileName)).matches()) {
-      if (checkNamingConventionsWithException(group = matcher.group(groupNumber))) {
+      if (checkNamingConventionsWithException(matcher.group(groupNumber))) {
         return matcher.group(groupNumber);
       }
     }
     return null;
   }
 
-
+  /**
+   * This function uses a regular expression to check the input name. The name could be schema,
+   * table or column name. This should be used when the name is read from the archive other than
+   * input by the user. When the name is an input from the user, use {@link checkNamingConventions}
+   * instead.
+   * <p>
+   * By doing so, the input would follow the conventions so there should be no invalid name in
+   * archive after saving the users' input. In other words, a input name not following a naming
+   * convention is considered a bad usage and would be aborted. But if a invalid naming convention
+   * is detected when reading files in the archive, it should be considered a server Error.
+   *
+   * @param name
+   * @return
+   */
+  static final boolean checkNamingConventionsWithException(String name) {
+    if (NAMING_CONVENTION.matcher(name).matches()) {
+      return true;
+    } else {
+      throw new InvalidNamingConventionException("Invalid naming convention when checking " + name);
+    }
+  }
 
 }

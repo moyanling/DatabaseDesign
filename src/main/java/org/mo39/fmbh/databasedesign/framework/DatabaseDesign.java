@@ -2,7 +2,6 @@ package org.mo39.fmbh.databasedesign.framework;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -25,7 +24,22 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class DatabaseDesign {
 
-  private Map<String, String> SystemProperties;
+  /**
+   * Initialize.
+   * 
+   */
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public DatabaseDesign() {
+    // ----------------------
+    @SuppressWarnings("resource")
+    ApplicationContext ctx = new ClassPathXmlApplicationContext("applicationContext.xml");
+    // ----------------------
+    Cmd.setCmdList((List<Cmd>) ctx.getBean("supportedCmdList"));
+    DataType.setDataTypeList((List<DataType>) ctx.getBean("supportedDataTypeList"));
+    Constraint.setConstraintList((List<Constraint>) ctx.getBean("supportedConstraintList"));
+    SystemProperties.setSystemProperties((Map<String, String>) ctx.getBean("systemProperties"));
+  }
+
   private static Scanner scan = new Scanner(System.in);
 
   /**
@@ -53,6 +67,7 @@ public class DatabaseDesign {
           if (executor instanceof Viewable) {
             View.newView(Viewable.class.cast(executor));
           }
+          InfoSchema.validate();
         }
       }
     } catch (InvocationTargetException e) {
@@ -92,7 +107,7 @@ public class DatabaseDesign {
     for (Constraint constraint : Constraint.getConstraintList()) {
       sb.append("\t" + constraint.getName() + " \n\t\t- " + constraint.getDescription() + "\n\n");
     }
-    sb.append(dbDesign.getSystemProperties().get("usageInstruction"));
+    sb.append(SystemProperties.get("usageInstruction"));
     View.newView(sb.toString());
   }
 
@@ -102,9 +117,9 @@ public class DatabaseDesign {
    * @param dbDesign
    */
   public static void optionRun(DatabaseDesign dbDesign) {
-    View.newView(dbDesign.getSystemProperties().get("welcome"));
+    View.newView(SystemProperties.get("welcome"));
     while (true) {
-      View.newView(dbDesign.getSystemProperties().get("prompt"));
+      View.newView(SystemProperties.get("prompt"));
       StringBuilder arg = new StringBuilder();
       String query = null;
       for (int i = 0; i <= 10; i++) {
@@ -122,14 +137,6 @@ public class DatabaseDesign {
     }
   }
 
-  public Map<String, String> getSystemProperties() {
-    return SystemProperties;
-  }
-
-  public void setSystemProperties(Map<String, String> systemProperties) {
-    SystemProperties = Collections.unmodifiableMap(systemProperties);
-  }
-
   private static boolean checkAnnotation(Method method) {
     if (method.getAnnotation(RequiresActiveSchema.class) != null) {
       if (!Status.hasActiveSchema()) {
@@ -140,15 +147,10 @@ public class DatabaseDesign {
     return true;
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   public static void main(String[] args) {
-    @SuppressWarnings("resource")
-    ApplicationContext ctx = new ClassPathXmlApplicationContext("applicationContext.xml");
-    DatabaseDesign dbDesign = ctx.getBean(DatabaseDesign.class);
-    // ----------------------
-    Cmd.setCmdList((List<Cmd>) ctx.getBean("supportedCmdList"));
-    DataType.setDataTypeList((List<DataType>) ctx.getBean("supportedDataTypeList"));
-    Constraint.setConstraintList((List<Constraint>) ctx.getBean("supportedConstraintList"));
+    DatabaseDesign dbDesign = new DatabaseDesign();
+    InfoSchema.init();
+    InfoSchema.validate();
     // ----------------------
     Options opts = new Options();
     CommandLineParser parser = new DefaultParser();

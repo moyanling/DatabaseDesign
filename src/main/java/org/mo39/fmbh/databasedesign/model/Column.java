@@ -22,30 +22,31 @@ public class Column {
     this.constraint = constraint;
   }
 
-  public static Column newColumnDefinition(String colDefinitionStr) throws BadUsageException {
+  public static Column newColumnDefinition(String columnDef) throws BadUsageException {
+    String colDef = columnDef.trim();
     Pattern regx = Pattern.compile(COLUMN_DEFINITION);
-    Matcher matcher = regx.matcher(colDefinitionStr);
-    matcher = regx.matcher(colDefinitionStr);
+    Matcher matcher = regx.matcher(colDef);
+    matcher = regx.matcher(colDef);
     // ----------------------
     if (!matcher.matches()) {
-      throw new BadUsageException("Bad column definition.");
+      throw new BadUsageException("Bad column definition: " + colDef);
     }
     // ----------------------
     String columnName = matcher.group(1).trim();
     if (!NamingUtils.checkNamingConventions(columnName)) {
-      throw new BadUsageException("Bad column name.");
+      throw new BadUsageException("Bad column name: " + columnName);
     }
     // ----------------------
     String dataTypeStr = matcher.group(2).trim();
     DataType<?> dataType = DataType.supports(dataTypeStr);
     if (dataType == null) {
-      throw new BadUsageException("Unsupported data type.");
+      throw new BadUsageException("Unsupported data type: " + dataTypeStr);
     }
     // ----------------------
     String constraintStr = matcher.group(3).trim();
     Constraint constraint = Constraint.supports(constraintStr);
     if (constraint == null) {
-      throw new BadUsageException("Unsupported constraint.");
+      throw new BadUsageException("Unsupported constraint: " + constraintStr);
     }
     return new Column(columnName, dataType, constraint, null);
   }

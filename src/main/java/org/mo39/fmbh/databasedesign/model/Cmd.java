@@ -7,6 +7,8 @@ import java.util.regex.Pattern;
 
 import org.mo39.fmbh.databasedesign.framework.DatabaseDesign;
 
+import com.google.common.base.Preconditions;
+
 /**
  * Command class. The fields are injected by applicationContext except cmd. String cmd is set
  * manually if the input arg matches the regx.
@@ -32,6 +34,7 @@ public class Cmd {
    * @return Returns true if supports. Otherwise false.
    */
   public static Cmd supports(String arg) {
+    Preconditions.checkArgument(arg != null);
     for (Cmd cmd : Cmd.supportedCmdList) {
       Pattern regx = Pattern.compile(cmd.regx, Pattern.CASE_INSENSITIVE);
       Matcher matcher = regx.matcher(arg);
