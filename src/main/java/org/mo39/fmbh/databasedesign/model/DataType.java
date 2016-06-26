@@ -69,7 +69,6 @@ public abstract class DataType<T> {
   }
 
   public static class DbInt extends DataType<Integer> {
-
   }
 
   public static class DbByte extends DataType<Byte> {

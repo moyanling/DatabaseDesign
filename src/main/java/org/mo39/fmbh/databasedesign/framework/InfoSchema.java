@@ -19,7 +19,9 @@ import com.google.common.io.Files;
 /**
  * The system info schema related operation should be only invoked with utils. All invoking methods
  * would not check preconditions such as whether the file has already exists. These preconditions
- * should assured before doing updates to info schema.
+ * should assured before doing updates to info schema. <br>
+ * //TODO Kill the {@link SystemProperties#DELIMITER} and {@link SystemProperties#LINE_BREAK}.
+ * Create column definition for information schema, other than plain string.
  * 
  * @author Jihan Chen
  *
