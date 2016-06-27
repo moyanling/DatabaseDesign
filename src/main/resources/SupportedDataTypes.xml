@@ -16,21 +16,25 @@
 
 	<util:list id="supportedDataTypeList">
 	
-		<bean id="byte" class="org.mo39.fmbh.databasedesign.model.DataType$DbByte">
+		<bean id="byte" class="org.mo39.fmbh.databasedesign.model.DataType">
 			<property name="name" value="BYTE"/>
 			<property name="regx" value="BYTE"/>
+			<property name="parseTo" value="java.lang.Integer#parseInt"/>
+			<property name="javaClass" value="java.lang.Integer"/>
 			<property name="description" value="A signed two’s compliment byte: range -128 to 127" />
 		</bean>
 		
-		<bean id="int" class="org.mo39.fmbh.databasedesign.model.DataType$DbInt">
+		<bean id="int" class="org.mo39.fmbh.databasedesign.model.DataType">
 			<property name="name" value="INT"/>
 			<property name="regx" value="INT"/>
+			<property name="parseTo" value="java.lang.Byte#parseByte"/>
+			<property name="javaClass" value="java.lang.Byte"/>
 			<property name="description" value="A signed two’s compliment integer: range -2147483648 to 2147483647" />
 		</bean>
 		
-		<bean id="varChar" class="org.mo39.fmbh.databasedesign.model.DataType$DbVarChar">
+		<bean id="varChar" class="org.mo39.fmbh.databasedesign.model.DataType">
 			<property name="name" value="VARCHAR"/>
-			<property name="regx" value="VARCHAR"/>
+			<property name="regx" value="VARCHAR\([0-9]+\)"/>
 			<property name="description" value="A variable length ASCII string with a maximum of n characters. n may be 0-127. Each instance is prepended with an unsigned byte indicating the number of ASCII characters that follow." />
 		</bean>
 		

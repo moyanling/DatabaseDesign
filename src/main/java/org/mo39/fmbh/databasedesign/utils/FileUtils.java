@@ -1,20 +1,25 @@
 package org.mo39.fmbh.databasedesign.utils;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.mo39.fmbh.databasedesign.utils.NamingUtils.inferTableFromtbl;
 
 import java.io.File;
-import java.nio.file.Path;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.mo39.fmbh.databasedesign.framework.InfoSchema;
+import org.mo39.fmbh.databasedesign.framework.SystemProperties;
+import org.mo39.fmbh.databasedesign.model.Column;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 /**
- * This class handles file level process within the archive. It helps to anaylise certain file name,
+ * This class handles file level process within the archive. It helps to analyze certain file name,
  * acquire file names and delete files. It does not support reading or writing the content of the
  * file.
  *
@@ -23,9 +28,10 @@ import com.google.common.collect.Sets;
  */
 public abstract class FileUtils {
 
-  private static final String ARCHIVE_ROOT = ".\\archive";
-  private static final Pattern NDX_FILE = Pattern.compile(".*\\.ndx");
-  private static final Pattern TBL_FILE = Pattern.compile(".*\\.tbl");
+  static final String ARCHIVE_ROOT = SystemProperties.ARCHIVE_ROOT;
+
+  static final Pattern NDX_FILE = Pattern.compile(".*\\.ndx");
+  static final Pattern TBL_FILE = Pattern.compile(".*\\.tbl");
 
   /**
    * Get table file list. i.e. the file ends with .tbl.
@@ -48,16 +54,77 @@ public abstract class FileUtils {
   }
 
   /**
+   * Return a tbl file reference according to schema and table name.
+   * 
+   * @param schema
+   * @param table
+   * @return
+   */
+  public static final File tblRef(String schema, String table) {
+    checkArgument(schema != null && table != null);
+    return schema.equals(SystemProperties.INFO_SCHEMA)
+        ? Paths.get(FileUtils.ARCHIVE_ROOT, schema + "." + table + ".tbl").toFile()
+        : Paths.get(FileUtils.ARCHIVE_ROOT, schema, table + ".tbl").toFile();
+  }
+
+  /**
+   * Return a ndx file reference according to schema, table and column name.
+   * 
+   * @param schema
+   * @param table
+   * @param column
+   * @return
+   */
+  public static final File ndxRef(String schema, String table, String column) {
+    checkArgument(schema != null && table != null && column != null);
+    return Paths.get(FileUtils.ARCHIVE_ROOT, table + "." + column + ".ndx").toFile();
+  }
+
+  /**
+   * Create a new schema i.e. a folder to hold tables.
+   * 
+   * @param schema
+   * @throws IOException
+   */
+  public static boolean createSchema(String schema) throws IOException {
+    if (Paths.get(ARCHIVE_ROOT, schema).toFile().mkdirs()) {
+      InfoSchemaUtils.updateAtCreatingSchema(schema);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * This function will take schema as a folder and table as the tbl file name. Unless the schema is
+   * information_schema.
+   * 
+   * @param schema
+   * @param table
+   * @throws IOException
+   */
+  public static boolean createtblFile(String schema, String table, List<Column> columns)
+      throws IOException {
+    if (tblRef(schema, table).createNewFile()) {
+      InfoSchemaUtils.updateAtCreatingTable(schema, table, columns);
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * Delete table in the archive
    *
    * @param schemaName
    * @param tableName
    * @return true if delete successfully else false.
    */
-  public static boolean deleteTable(String schemaName, String tableName) {
-    String fileName = tableName + ".tbl";
-    Path path = Paths.get(ARCHIVE_ROOT, schemaName, fileName);
-    return path.toFile().delete();
+  public static boolean deleteTable(String schema, String table) {
+    if (tblRef(schema, table).delete()) {
+      if (InfoSchemaUtils.updateAtDroppingTable(schema, table)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
@@ -67,31 +134,32 @@ public abstract class FileUtils {
    * @return true if delete successfully else false.
    */
   public static boolean deleteSchema(String schema) {
+    checkArgument(schema != null);
     for (String tblFileName : gettblFileList(schema)) {
-      if (!Paths.get(ARCHIVE_ROOT, schema, tblFileName).toFile().delete()) {
+      if (!tblRef(schema, tblFileName).delete()) {
         return false;
       }
     }
-    return Paths.get(ARCHIVE_ROOT, schema).toFile().delete();
+    if (Paths.get(ARCHIVE_ROOT, schema).toFile().delete()) {
+      if (InfoSchemaUtils.updateAtDeletingSchema(schema)) {
+        return true;
+      }
+    }
+    return false;
 
   }
 
   /**
-   * Get schemas in the archive
+   * Get schemas in the archive. Delegate to {@link InfoSchema#getSchemas()}
    *
    * @return A unmodifiable set containing all schemas in the archive.
    *         {@link Collections#unmodifiableSet}
    */
   public static Set<String> getSchemas() {
-    Set<String> schemas = Sets.newHashSet();
-    File[] files = new File(ARCHIVE_ROOT).listFiles();
-    for (File file : files) {
-      if (file.isDirectory()) {
-        schemas.add(file.getName());
-      }
-    }
-    return schemas;
+    return InfoSchemaUtils.getSchemas();
   }
+
+
 
   /**
    * Get tables for specified schema.
@@ -101,11 +169,37 @@ public abstract class FileUtils {
    *         {@link Collections#unmodifiableSet}
    */
   public static Set<String> getTables(String schema) {
-    Set<String> set = Sets.newHashSet();
-    for (String tbl : gettblFileList(schema)) {
-      set.add(inferTableFromtbl(tbl));
+    return InfoSchemaUtils.getTables(schema);
+  }
+
+  /**
+   * Validate whether the schemas in SCHEMATA table is consistent with schema folders in archive.
+   * 
+   * @return
+   */
+  public static boolean validateSchemas() {
+    Set<String> schemas = Sets.newHashSet();
+    File[] files = new File(ARCHIVE_ROOT).listFiles();
+    for (File file : files) {
+      if (file.isDirectory()) {
+        schemas.add(file.getName());
+      }
     }
-    return Collections.unmodifiableSet(set);
+    return schemas.equals(getSchemas());
+  }
+
+  /**
+   * Validate whether the tables in TABLES is consistent with tables in schema fold in archive.
+   * 
+   * @return
+   */
+  public static boolean validateTables(String schema) {
+    checkArgument(schema != null);
+    Set<String> tables = Sets.newHashSet();
+    for (String tbl : gettblFileList(schema)) {
+      tables.add(inferTableFromtbl(tbl));
+    }
+    return tables.equals(getTables(schema));
   }
 
   /**
@@ -114,6 +208,7 @@ public abstract class FileUtils {
    * @return
    */
   private static List<String> getFileList(String schema, Pattern pattern) {
+    checkArgument(schema != null && pattern != null);
     List<String> fileList = Lists.newArrayList();
     File[] files = Paths.get(ARCHIVE_ROOT, schema).toFile().listFiles();
     for (File file : files) {

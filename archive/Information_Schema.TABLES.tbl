@@ -1,0 +1,5 @@
+Information_Schema,SCHEMATA,1
+Information_Schema,TABLES,3
+Information_Schema,COLUMNS,4
+schema_1,table_1,0
+schema_1,table_2,0

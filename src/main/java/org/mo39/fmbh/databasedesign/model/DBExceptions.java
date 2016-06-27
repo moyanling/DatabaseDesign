@@ -55,6 +55,13 @@ public class DBExceptions extends Exception {
    */
   public static class UnrecognizableDataTypeException extends DBExceptions {
 
+    private static final long serialVersionUID = 1L;
+
+    public UnrecognizableDataTypeException() {}
+
+    public UnrecognizableDataTypeException(String description) {
+      super(description);
+    }
   }
 
   /**
@@ -65,6 +72,32 @@ public class DBExceptions extends Exception {
    */
   public static class UnrecognizableConstraintException extends DBExceptions {
 
+    private static final long serialVersionUID = 1L;
+
+    public UnrecognizableConstraintException() {}
+
+    public UnrecognizableConstraintException(String description) {
+      super(description);
+    }
+
+  }
+
+  /**
+   * Indicates that the folders and tables in archive is not consistent with the information
+   * provided by Information_Schema.
+   *
+   * @author Jihan Chen
+   *
+   */
+  public static class InvalidInformationSchemaException extends RuntimeException {
+
+    private static final long serialVersionUID = 1L;
+
+    public InvalidInformationSchemaException() {}
+
+    public InvalidInformationSchemaException(String description) {
+      super(description);
+    }
   }
 
 }

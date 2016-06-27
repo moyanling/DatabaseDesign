@@ -48,6 +48,7 @@ public interface Executable {
    *         <strong>supported</strong> command is invoked but it fails to be used correctly. Such
    *         as a command trys to create a new schema but is not following naming convention. See
    *         naming conventions in {@link NamingUtils}.
+   * @throws IOException
    */
   public void execute() throws DBExceptions, IOException;
 
@@ -64,19 +65,6 @@ public interface Executable {
   public static @interface RequiresActiveSchema {
 
   }
-
-  // /**
-  // * If this a execution is dangerous, such as drop schema operation, this annotation should be
-  // * provided to make the user confirm the operation.
-  // *
-  // * @author Jihan Chen
-  // *
-  // */
-  // @Target(ElementType.METHOD)
-  // @Retention(RetentionPolicy.RUNTIME)
-  // public static @interface RequiresConfirm {
-  //
-  // }
 
   /**
    * //TODO Not implemented yet. Maybe useful for operating in a multi-threads env.<br>

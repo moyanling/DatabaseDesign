@@ -16,7 +16,7 @@
 
 	<util:list id="supportedConstraintList">
 		
-		<bean id="primaryKey" class="org.mo39.fmbh.databasedesign.model.Constraint$Primary">
+		<bean id="primaryKey" class="org.mo39.fmbh.databasedesign.model.Constraint$PrimaryKey">
 			<property name="name" value="PRIMARY KEY"/>
 			<property name="regx" value="^PRIMARY\s+KEY$"/>
 			<property name="description" value="Assign the column as the primary key." />

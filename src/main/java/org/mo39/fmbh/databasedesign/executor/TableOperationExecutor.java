@@ -13,7 +13,6 @@ import org.mo39.fmbh.databasedesign.model.Column;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.utils.FileUtils;
-import org.mo39.fmbh.databasedesign.utils.IOUtils;
 import org.mo39.fmbh.databasedesign.utils.NamingUtils;
 
 import com.google.common.collect.Lists;
@@ -47,10 +46,14 @@ public abstract class TableOperationExecutor {
     public void execute() {
       Set<String> tableSet = FileUtils.getTables(Status.getCurrentSchema());
       StringBuilder sb = new StringBuilder("Show Tables: ");
-      for (String table : tableSet) {
-        sb.append("\n\t" + table + "\n");
+      if (tableSet.size() == 0) {
+        sb.append("\n\tNone");
+      } else {
+        for (String table : tableSet) {
+          sb.append("\n\t" + table + "\n");
+        }
       }
-      endMessage = sb.toString();
+      endMessage = sb.substring(0, sb.length() - 1).toString();
     }
 
   }
@@ -64,7 +67,7 @@ public abstract class TableOperationExecutor {
   public static class DropTable implements Executable, Viewable {
 
     private String endMessage;
-    private static final String REGEX = "^DROP\\s*?TABLE(.*?)\\;$";
+    private static final String REGEX = "^DROP\\s*?TABLE\\s(.*?)\\;$";
 
 
     @Override
@@ -101,8 +104,7 @@ public abstract class TableOperationExecutor {
    */
   public static class CreateTable implements Executable, Viewable {
 
-    private static final String REGEX = "^CREATE\\s*?TABLE(.*?)\\((.*)\\)\\s.*?\\;$";
-
+    private static final String REGEX = "^CREATE\\s*?TABLE\\s(.*?)\\s\\((.*)\\)\\s*?\\;$";
 
     private String endMessage;
 
@@ -112,31 +114,32 @@ public abstract class TableOperationExecutor {
     }
 
     @Override
-    public void execute() throws IOException, DBExceptions {
-      String schema = Status.getCurrentSchema();
+    @RequiresActiveSchema
+    public void execute() throws DBExceptions, IOException {
       List<Column> columns = Lists.newArrayList();
-      Matcher matcher = Pattern.compile(REGEX).matcher(Status.getCurrentCmdStr());
-      // ----------------------
+      Matcher matcher =
+          Pattern.compile(REGEX, Pattern.CASE_INSENSITIVE).matcher(Status.getCurrentCmdStr());
       if (!matcher.matches()) {
         throw new BadUsageException("No table or column definition is found.");
       }
-      // ----------------------
       String table = matcher.group(1);
-      if (!NamingUtils.checkNamingConventions(table)) {
-        throw new BadUsageException("Table name is not following naming conventions.");
-      }
-      if (FileUtils.getTables(schema).contains(table)) {
-        throw new BadUsageException("Table - '" + table + "' already exists.");
-      }
-      // ----------------------
       String content = matcher.group(2);
+      if (!NamingUtils.checkNamingConventions(table)) {
+        throw new BadUsageException("Bad table name.");
+      }
       for (String col : content.split("\\,")) {
         columns.add(Column.newColumnDefinition(col));
       }
-      // ----------------------
-      IOUtils.createNewTable(schema, table, columns);
-      endMessage = "Table - '" + table + "' is Created.";
-
+      String schema = Status.getCurrentSchema();
+      if (FileUtils.getTables(schema).contains(table)) {
+        endMessage = "Table - '" + table + "' already exists.";
+        return;
+      }
+      if (FileUtils.createtblFile(schema, table, columns)) {
+        endMessage = "Table - '" + table + "' is Created.";
+      } else {
+        endMessage = "Fails to create Table - '" + table + "'.";
+      }
     }
 
   }
