@@ -9,6 +9,16 @@ package org.mo39.fmbh.databasedesign.model;
 @SuppressWarnings("serial")
 public class DBExceptions extends Exception {
 
+  /**
+   * Print the error stack track and give it a fast-fail error.
+   *
+   * @param e
+   */
+  public static void newError(Throwable e) {
+    e.printStackTrace();
+    throw new Error();
+  }
+
   public DBExceptions() {}
 
   public DBExceptions(String description) {

@@ -143,7 +143,7 @@ public abstract class NamingUtils {
    * @param name
    * @return
    */
-  static final boolean checkNamingConventionsWithException(String name) {
+  private static final boolean checkNamingConventionsWithException(String name) {
     if (NAMING_CONVENTION.matcher(name).matches()) {
       return true;
     } else {

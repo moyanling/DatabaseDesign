@@ -24,6 +24,38 @@ public class Column {
     this.constraint = constraint;
   }
 
+  /**
+   * A special case for a column which contains no value. Is used as the definition of a table.
+   *
+   * @author Jihan Chen
+   *
+   */
+  public static class ColumnDef extends Column {
+
+    public ColumnDef(String name, DataType dataType, Constraint constraint, Object value) {
+      super(name, dataType, constraint, null);
+    }
+
+    /**
+     * This function <b>MUST</b> return a new Column object other than simply set the value field of
+     * column definition.
+     *
+     * @param arr
+     * @return
+     */
+    public Column newRow(byte[] arr) {
+      try{
+
+      } catch (Exception e) {
+        DBExceptions.newError(e);
+      }
+
+
+      return null;
+    }
+
+  }
+
   public static Column newColumnDefinition(String columnDef) throws DBExceptions {
     String colDef = columnDef.trim();
     Pattern regx = Pattern.compile(COLUMN_DEFINITION);
@@ -50,7 +82,7 @@ public class Column {
     if (constraint == null) {
       throw new UnrecognizableConstraintException("Unsupported constraint: " + constraintStr);
     }
-    return new Column(columnName, dataType, constraint, null);
+    return new ColumnDef(columnName, dataType, constraint, null);
   }
 
   public String getName() {

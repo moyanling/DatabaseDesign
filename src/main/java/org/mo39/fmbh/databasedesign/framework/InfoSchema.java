@@ -11,6 +11,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 
+import org.mo39.fmbh.databasedesign.model.DBExceptions;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.InvalidInformationSchemaException;
 import org.mo39.fmbh.databasedesign.utils.FileUtils;
 
@@ -22,11 +23,15 @@ import com.google.common.io.Files;
  * should assured before doing updates to info schema. <br>
  * //TODO Kill the {@link SystemProperties#DELIMITER} and {@link SystemProperties#LINE_BREAK}.
  * Create column definition for information schema, other than plain string.
- * 
+ *
  * @author Jihan Chen
  *
  */
 public abstract class InfoSchema {
+
+  private static String SCHEMATA_DEFINITION = "SCHEMA_NAME VARCHAR(20)";
+  private static String TABLES_DEFINITION = "TABLE_SCHEMA | TABLE_NAME | TABLE_ROWS";
+  private static String COLUMNS_DEFINITION = "TABLE_SCHEMA | TABLE_NAME | COLUMN NAME | ORDINAL_POSITION | COLUMN_TYPE | IS_NULLABLE | COLUMN_KEY";
 
   private static File schemata = tblRef(INFO_SCHEMA, SCHEMAS);
   private static File tables = tblRef(INFO_SCHEMA, TABLES);
@@ -35,7 +40,7 @@ public abstract class InfoSchema {
   /**
    * Initiate the information schema. If all three tables already exist, return. Otherwise create
    * three tables.
-   * 
+   *
    */
   protected static final void init() {
     if (exists()) {
@@ -46,13 +51,13 @@ public abstract class InfoSchema {
       createTables();
       createColumns();
     } catch (IOException e) {
-      throw new Error(e.getMessage());
+      DBExceptions.newError(e);
     }
   }
 
   /**
    * Validate SCHEMATA and TABLES.
-   * 
+   *
    */
   protected static final void validate() {
     String message;
@@ -72,7 +77,7 @@ public abstract class InfoSchema {
 
   /**
    * Check if three tables of information schema exist.
-   * 
+   *
    * @return
    */
   protected static final boolean exists() {
@@ -83,10 +88,10 @@ public abstract class InfoSchema {
       return false;
     }
   }
-  
+
   /**
    * Clear all three tables in information_schema;
-   * 
+   *
    */
   protected static final void clear() {
     try {
@@ -100,16 +105,16 @@ public abstract class InfoSchema {
         java.nio.file.Files.delete(columns.toPath());
       }
     } catch (Exception e) {
-      throw new Error(e.getMessage());
+      DBExceptions.newError(e);
     }
   }
 
   /**
-   * SCHEMATA 
-   * +-------------+ 
-   * | SCHEMA_NAME | 
+   * SCHEMATA
    * +-------------+
-   * 
+   * | SCHEMA_NAME |
+   * +-------------+
+   *
    * @throws IOException
    */
   private static final void createSchemata() throws IOException {
@@ -120,11 +125,11 @@ public abstract class InfoSchema {
   }
 
   /**
-   * TABLES 
-   * +--------------+------------+------------+ 
+   * TABLES
+   * +--------------+------------+------------+
    * | TABLE_SCHEMA | TABLE_NAME | TABLE_ROWS |
    * +--------------+------------+------------+
-   * 
+   *
    * @throws IOException
    */
   private static final void createTables() throws IOException {
@@ -138,10 +143,10 @@ public abstract class InfoSchema {
 
   /**
    * COLUMNS
-   * +--------------+------------+-------------+------------------+-------------+-------------+------------+ 
+   * +--------------+------------+-------------+------------------+-------------+-------------+------------+
    * | TABLE_SCHEMA | TABLE_NAME | COLUMN NAME | ORDINAL_POSITION | COLUMN_TYPE | IS_NULLABLE | COLUMN_KEY |
    * +--------------+------------+-------------+------------------+-------------+-------------+------------+
-   * 
+   *
    * @throws IOException
    */
   private static final void createColumns() throws IOException {

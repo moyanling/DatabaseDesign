@@ -17,6 +17,7 @@ import org.mo39.fmbh.databasedesign.executor.Executable.RequiresActiveSchema;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
 import org.mo39.fmbh.databasedesign.model.Cmd;
 import org.mo39.fmbh.databasedesign.model.Constraint;
+import org.mo39.fmbh.databasedesign.model.DBExceptions;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.model.DataType;
 import org.springframework.context.ApplicationContext;
@@ -26,9 +27,9 @@ public class DatabaseDesign {
 
   /**
    * Initialize.
-   * 
+   *
    */
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings("unchecked")
   public DatabaseDesign() {
     // ----------------------
     @SuppressWarnings("resource")
@@ -80,8 +81,7 @@ public class DatabaseDesign {
         View.newView("Bad usage for '" + cmd.getName() + "'. " + message);
       }
     } catch (Exception e) {
-      e.printStackTrace();
-      throw new Error();
+      DBExceptions.newError(e);
     } finally {
       Status.endRunCmd();
     }
@@ -92,7 +92,6 @@ public class DatabaseDesign {
    *
    * @param dbDesign
    */
-  @SuppressWarnings("rawtypes")
   public static void optionAll(DatabaseDesign dbDesign) {
     StringBuilder sb = new StringBuilder();
     sb.append("Supported commands: \n\n");
@@ -162,7 +161,7 @@ public class DatabaseDesign {
     try {
       cl = parser.parse(opts, args);
     } catch (ParseException e) {
-      throw new RuntimeException("ParseException.");
+      DBExceptions.newError(e);
     }
     // ----------------------
     if (cl.hasOption('r')) {
