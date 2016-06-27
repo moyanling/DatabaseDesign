@@ -79,16 +79,28 @@ public abstract class InfoSchema {
     if (schemata.exists() && tables.exists() && columns.exists()) {
       return true;
     } else {
+      clear();
+      return false;
+    }
+  }
+  
+  /**
+   * Clear all three tables in information_schema;
+   * 
+   */
+  protected static final void clear() {
+    try {
       if (schemata.exists()) {
-        schemata.delete();
+        java.nio.file.Files.delete(schemata.toPath());
       }
       if (tables.exists()) {
-        tables.delete();
+        java.nio.file.Files.delete(tables.toPath());
       }
       if (columns.exists()) {
-        columns.delete();
+        java.nio.file.Files.delete(columns.toPath());
       }
-      return false;
+    } catch (Exception e) {
+      throw new Error(e.getMessage());
     }
   }
 

@@ -7,21 +7,22 @@ import java.util.regex.Pattern;
 
 import com.google.common.base.Preconditions;
 
-public abstract class DataType<T> {
+public abstract class DataType {
 
   private String name;
   private String regx;
+  private String parseTo;
+  private String javaClass;
   private String description;
 
-  @SuppressWarnings("rawtypes")
   private static List<DataType> supportedDataTypeList;
+  private static List<Class<?>> dataClassList;
 
   /**
    * Check whether input string is a supported DataType and convert to the corresponding DataType.
    *
    * @return returns {@code null} if not supported. returns corresponding DataType if supported.
    */
-  @SuppressWarnings("rawtypes")
   public static DataType supports(String arg) {
     Preconditions.checkArgument(arg != null);
     for (DataType type : DataType.supportedDataTypeList) {
@@ -34,14 +35,23 @@ public abstract class DataType<T> {
     return null;
   }
 
-  @SuppressWarnings("rawtypes")
+  public static List<Class<?>> getDataClassList() {
+    return dataClassList;
+  }
+
   public static List<DataType> getDataTypeList() {
     return supportedDataTypeList;
   }
 
-  @SuppressWarnings("rawtypes")
   public static void setDataTypeList(List<DataType> supportedDataTypeList) {
     DataType.supportedDataTypeList = Collections.unmodifiableList(supportedDataTypeList);
+    try {
+      for (DataType dt : supportedDataTypeList) {
+        dataClassList.add(Class.forName(dt.javaClass));
+      }
+    } catch (Exception e) {
+      throw new Error(e.getMessage());
+    }
   }
 
   public String getName() {
@@ -60,23 +70,29 @@ public abstract class DataType<T> {
     this.regx = regx;
   }
 
+
+  public String getParseTo() {
+    return parseTo;
+  }
+
+  public void setParseTo(String parseTo) {
+    this.parseTo = parseTo;
+  }
+
+  public String getJavaClass() {
+    return javaClass;
+  }
+
+  public void setJavaClass(String javaClass) {
+    this.javaClass = javaClass;
+  }
+
   public String getDescription() {
     return description;
   }
 
   public void setDescription(String description) {
     this.description = description;
-  }
-
-  public static class DbInt extends DataType<Integer> {
-  }
-
-  public static class DbByte extends DataType<Byte> {
-
-  }
-  public static class DbVarChar extends DataType<Character[]> {
-
-
   }
 
 }
