@@ -4,17 +4,18 @@ import java.util.Set;
 
 import org.mo39.fmbh.databasedesign.framework.Status;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
+import org.mo39.fmbh.databasedesign.model.DBExceptions;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.utils.FileUtils;
 import org.mo39.fmbh.databasedesign.utils.NamingUtils;
 
 /**
- * A abstract class that collects some basic schema operations.
+ * A abstract class that collects schema operations.
  *
  * @author Jihan Chen
  *
  */
-public abstract class BasicSchemaOperationExecutor {
+public abstract class SchemaOperationExecutor {
 
   /**
    * Show all schemas in the database.
@@ -60,7 +61,7 @@ public abstract class BasicSchemaOperationExecutor {
 
     @Override
     @IsReadOnly
-    public void execute() {
+    public void execute() throws DBExceptions {
       String schemaName = NamingUtils.extractAndCheckName(Status.getCurrentCmdStr(), REGEX, 1);
       if (schemaName != null) {
         Set<String> schemaSet = FileUtils.getSchemas();
@@ -93,7 +94,7 @@ public abstract class BasicSchemaOperationExecutor {
     private static final String REGEX = "^CREATE\\s*?SCHEMA(.*?)\\;$";
 
     @Override
-    public void execute() {
+    public void execute() throws DBExceptions {
       String schemaName = NamingUtils.extractAndCheckName(Status.getCurrentCmdStr(), REGEX, 1);
       if (schemaName != null) {
         Set<String> schemaSet = FileUtils.getSchemas();

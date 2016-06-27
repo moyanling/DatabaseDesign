@@ -1,11 +1,13 @@
 package org.mo39.fmbh.databasedesign.executor;
 
+import java.io.IOException;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.mo39.fmbh.databasedesign.framework.DatabaseDesign;
+import org.mo39.fmbh.databasedesign.model.DBExceptions;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.utils.NamingUtils;
 
@@ -47,7 +49,7 @@ public interface Executable {
    *         as a command trys to create a new schema but is not following naming convention. See
    *         naming conventions in {@link NamingUtils}.
    */
-  public void execute() throws BadUsageException;
+  public void execute() throws DBExceptions, IOException;
 
 
   /**

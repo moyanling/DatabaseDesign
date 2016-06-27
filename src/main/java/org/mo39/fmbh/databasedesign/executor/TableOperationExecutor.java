@@ -1,6 +1,7 @@
 
 package org.mo39.fmbh.databasedesign.executor;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -9,20 +10,21 @@ import java.util.regex.Pattern;
 import org.mo39.fmbh.databasedesign.framework.Status;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
 import org.mo39.fmbh.databasedesign.model.Column;
+import org.mo39.fmbh.databasedesign.model.DBExceptions;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
-import org.mo39.fmbh.databasedesign.model.Record;
 import org.mo39.fmbh.databasedesign.utils.FileUtils;
+import org.mo39.fmbh.databasedesign.utils.IOUtils;
 import org.mo39.fmbh.databasedesign.utils.NamingUtils;
 
 import com.google.common.collect.Lists;
 
 /**
- * A abstract class that collects some basic table operations.
+ * A abstract class that collects table operations.
  *
  * @author Jihan Chen
  *
  */
-public abstract class BasicTableOperationExecutor {
+public abstract class TableOperationExecutor {
 
   /**
    * Show all tables in current active schema.
@@ -72,22 +74,20 @@ public abstract class BasicTableOperationExecutor {
 
     @Override
     @RequiresActiveSchema
-    public void execute() {
+    public void execute() throws DBExceptions {
       String table = NamingUtils.extractAndCheckName(Status.getCurrentCmdStr(), REGEX, 1);
       if (table == null) {
         throw new BadUsageException();
       }
       String schema = Status.getCurrentSchema();
       Set<String> tableSet = FileUtils.getTables(schema);
-      if (tableSet.contains(table)) {
-        if (FileUtils.deleteTable(schema, table)) {
-          endMessage = "Table - '" + table + "' in schema -'" + schema + "' is deleted.";
-        } else {
-          endMessage = "Fails to delete Table - '" + table + "' in schema - '" + schema + "'";
-        }
+      if (!tableSet.contains(table)) {
+        throw new BadUsageException("The table does not exist in schema - '" + schema + "'.");
+      }
+      if (FileUtils.deleteTable(schema, table)) {
+        endMessage = "Table - '" + table + "' in schema -'" + schema + "' is deleted.";
       } else {
-        endMessage =
-            "The table does not exist in current schema - '" + Status.getCurrentSchema() + "'.";
+        endMessage = "Fails to delete Table - '" + table + "' in schema - '" + schema + "'";
       }
 
     }
@@ -112,23 +112,31 @@ public abstract class BasicTableOperationExecutor {
     }
 
     @Override
-    public void execute() {
+    public void execute() throws IOException, DBExceptions {
+      String schema = Status.getCurrentSchema();
       List<Column> columns = Lists.newArrayList();
       Matcher matcher = Pattern.compile(REGEX).matcher(Status.getCurrentCmdStr());
+      // ----------------------
       if (!matcher.matches()) {
         throw new BadUsageException("No table or column definition is found.");
       }
+      // ----------------------
       String table = matcher.group(1);
-      String content = matcher.group(2);
       if (!NamingUtils.checkNamingConventions(table)) {
-        throw new BadUsageException("Bad table name.");
+        throw new BadUsageException("Table name is not following naming conventions.");
       }
+      if (FileUtils.getTables(schema).contains(table)) {
+        throw new BadUsageException("Table - '" + table + "' already exists.");
+      }
+      // ----------------------
+      String content = matcher.group(2);
       for (String col : content.split("\\,")) {
         columns.add(Column.newColumnDefinition(col));
       }
-      Record record = Record.newTemplate(Status.getCurrentSchema(), table, columns);
-      record.writeToTable();
+      // ----------------------
+      IOUtils.createNewTable(schema, table, columns);
       endMessage = "Table - '" + table + "' is Created.";
+
     }
 
   }

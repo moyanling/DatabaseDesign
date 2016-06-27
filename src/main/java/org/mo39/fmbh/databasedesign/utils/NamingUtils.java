@@ -5,8 +5,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.mo39.fmbh.databasedesign.model.DBExceptions.InvalidNamingConventionException;
-
 import com.google.common.collect.Maps;
 
 public abstract class NamingUtils {
@@ -89,7 +87,7 @@ public abstract class NamingUtils {
     if (NAMING_CONVENTION.matcher(name).matches()) {
       return true;
     } else {
-      throw new InvalidNamingConventionException("Invalid naming convention when checking " + name);
+      throw new RuntimeException("Invalid naming convention in archive when checking " + name);
     }
   }
 

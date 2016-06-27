@@ -4,6 +4,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
+import org.mo39.fmbh.databasedesign.model.DBExceptions.UnrecognizableConstraintException;
+import org.mo39.fmbh.databasedesign.model.DBExceptions.UnrecognizableDataTypeException;
 import org.mo39.fmbh.databasedesign.utils.NamingUtils;
 
 public class Column {
@@ -22,30 +24,30 @@ public class Column {
     this.constraint = constraint;
   }
 
-  public static Column newColumnDefinition(String colDefinitionStr) throws BadUsageException {
+  public static Column newColumnDefinition(String colDefinitionStr) throws DBExceptions {
     Pattern regx = Pattern.compile(COLUMN_DEFINITION);
     Matcher matcher = regx.matcher(colDefinitionStr);
     matcher = regx.matcher(colDefinitionStr);
     // ----------------------
     if (!matcher.matches()) {
-      throw new BadUsageException("Bad column definition.");
+      throw new BadUsageException("Column definition is not following convention.");
     }
     // ----------------------
     String columnName = matcher.group(1).trim();
     if (!NamingUtils.checkNamingConventions(columnName)) {
-      throw new BadUsageException("Bad column name.");
+      throw new BadUsageException("Column name is not following naming convention.");
     }
     // ----------------------
     String dataTypeStr = matcher.group(2).trim();
     DataType<?> dataType = DataType.supports(dataTypeStr);
     if (dataType == null) {
-      throw new BadUsageException("Unsupported data type.");
+      throw new UnrecognizableDataTypeException();
     }
     // ----------------------
     String constraintStr = matcher.group(3).trim();
     Constraint constraint = Constraint.supports(constraintStr);
     if (constraint == null) {
-      throw new BadUsageException("Unsupported constraint.");
+      throw new UnrecognizableConstraintException();
     }
     return new Column(columnName, dataType, constraint, null);
   }

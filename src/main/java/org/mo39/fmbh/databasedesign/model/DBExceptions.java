@@ -1,19 +1,27 @@
 package org.mo39.fmbh.databasedesign.model;
 
-public abstract class DBExceptions {
+/**
+ * Database Design Exceptions.
+ *
+ * @author Jihan Chen
+ *
+ */
+@SuppressWarnings("serial")
+public class DBExceptions extends Exception {
 
-  public static class MissingAnnotationException extends Error {
+  public DBExceptions() {}
 
-    private static final long serialVersionUID = 1L;
-
-    public MissingAnnotationException() {}
-
-    public MissingAnnotationException(String description) {
-      super(description);
-    }
+  public DBExceptions(String description) {
+    super(description);
   }
 
-  public static class BadUsageException extends RuntimeException {
+  /**
+   * Indicates a bad usage for input command.
+   *
+   * @author Jihan Chen
+   *
+   */
+  public static class BadUsageException extends DBExceptions {
 
     private static final long serialVersionUID = 1L;
 
@@ -22,19 +30,41 @@ public abstract class DBExceptions {
     public BadUsageException(String description) {
       super(description);
     }
+  }
+  /**
+   * Indicates the insert record does not observe the constraint.
+   *
+   * @author Jihan Chen
+   *
+   */
+  public static class ConstraintViolationException extends DBExceptions {
+    private static final long serialVersionUID = 1L;
 
+    public ConstraintViolationException() {}
+
+    public ConstraintViolationException(String description) {
+      super(description);
+    }
+  }
+
+  /**
+   * Indicates that the data type cannot be recognized or is not supported in current design.
+   *
+   * @author Jihan Chen
+   *
+   */
+  public static class UnrecognizableDataTypeException extends DBExceptions {
 
   }
 
-  public static class InvalidNamingConventionException extends RuntimeException {
+  /**
+   * Indicates that the constraint cannot be recognized or is not supported in current design.
+   *
+   * @author Jihan Chen
+   *
+   */
+  public static class UnrecognizableConstraintException extends DBExceptions {
 
-    private static final long serialVersionUID = 1L;
-
-    public InvalidNamingConventionException() {}
-
-    public InvalidNamingConventionException(String description) {
-      super(description);
-    }
   }
 
 }
