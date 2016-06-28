@@ -1,11 +1,14 @@
 package org.mo39.fmbh.databasedesign.model;
 
+import static org.mo39.fmbh.databasedesign.model.DBExceptions.newError;
+
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.mo39.fmbh.databasedesign.utils.TblUtils;
 
 import com.google.common.collect.Lists;
 
@@ -36,22 +39,23 @@ public class Row implements Iterable<byte[]> {
   public void addRecord(String values) {
     String[] valueArray = values.split(",");
     if (valueArray.length != colDefs.size()) {
-      DBExceptions.newError(
-          "Adding record: The number of values is not consistent with column definition.");
+      newError("Adding record: The number of values is not consistent with column definition.");
     }
     byte[] result = new byte[0];
     try {
       for (int i = 0; i < valueArray.length; i++) {
         Column col = colDefs.get(i);
         String value = valueArray[i].trim();
-        // TODO impose the constraint of varchar(#num).
+        if (!DataType.checkDataType(col, value)) {
+          newError("Value: " + value + " does not observe datatype: " + col.getDataType().getArg());
+        }
         byte[] bytes = (byte[]) DataType.class
             .getMethod(col.getDataType().getParseToByteArray(), String.class).invoke(null, value);
         result = ArrayUtils.addAll(result, bytes);
       }
       records.add(result);
     } catch (Exception e) {
-      DBExceptions.newError(e);
+      newError(e);
     }
   }
 
@@ -64,8 +68,13 @@ public class Row implements Iterable<byte[]> {
     return records.remove(0);
   }
 
-  public List<Column> getColumns() {
-    return Collections.unmodifiableList(colDefs);
+  /**
+   * Write all records to DB. Then all the records in this Row object is cleared.
+   */
+  public void writeToDB(String schema, String table) {
+    for (int i = 0; i < records.size(); i++) {
+      TblUtils.appendRecordTotbl(getRecord(), schema, table);
+    }
   }
 
   /**
@@ -97,6 +106,10 @@ public class Row implements Iterable<byte[]> {
       }
 
     };
+  }
+
+  public List<Column> getColumns() {
+    return Collections.unmodifiableList(colDefs);
   }
 
 }

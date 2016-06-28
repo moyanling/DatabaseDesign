@@ -1,5 +1,7 @@
 package org.mo39.fmbh.databasedesign.test.model;
 
+import java.util.ArrayList;
+
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -7,6 +9,8 @@ import org.junit.Test;
 import org.mo39.fmbh.databasedesign.framework.DatabaseDesign;
 import org.mo39.fmbh.databasedesign.model.Column;
 import org.mo39.fmbh.databasedesign.model.Row;
+
+import com.google.common.collect.Lists;
 
 public class TestRow {
 
@@ -30,6 +34,14 @@ public class TestRow {
     Assert.assertArrayEquals(
         new byte[] {0, 0, 0, 39, 11, 72, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100},
         row.getRecord());
+  }
+
+  @Test
+  public void testRemoveRecordFromList() {
+    ArrayList<String> x = Lists.newArrayList("0", "1", "2", "3", "4", "5");
+    for (int i = 0; i < x.size(); i++) {
+      Assert.assertEquals(new Integer(i).toString(), x.remove(0));
+    }
   }
 
 }

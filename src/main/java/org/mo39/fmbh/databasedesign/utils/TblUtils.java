@@ -57,4 +57,10 @@ public abstract class TblUtils {
     return true;
   }
 
+  public static void appendRecordTotbl(byte[] record, String schema, String table) {
+    File tbl = FileUtils.tblRef(schema, table);
+    // TODO
+    // TODO updata ndx file.
+    // TODO updata information schema.
+  }
 }

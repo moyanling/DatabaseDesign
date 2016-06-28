@@ -12,6 +12,8 @@ import com.google.common.base.Preconditions;
 
 public class DataType {
 
+  private String arg;
+
   private String name;
   private String regx;
   private String description;
@@ -33,10 +35,33 @@ public class DataType {
       Pattern regx = Pattern.compile(type.regx, Pattern.CASE_INSENSITIVE);
       Matcher matcher = regx.matcher(arg);
       if (matcher.matches()) {
+        type.arg = arg;
         return type;
       }
     }
     return null;
+  }
+
+  /**
+   * Check some constraints implied by a datatype. It now checks the length of the varchar only.
+   *
+   * @return
+   */
+  public static boolean checkDataType(Column col, String value) {
+    DataType dt = col.getDataType();
+    switch (dt.name) {
+      case "VARCHAR":
+        Pattern regx = Pattern.compile(dt.regx, Pattern.CASE_INSENSITIVE);
+        Matcher matcher = regx.matcher(dt.arg);
+        matcher.matches();
+        int len = Integer.parseInt(matcher.group(1));
+        if (len < value.length()) {
+          return false;
+        }
+        return true;
+      default:
+        return true;
+    }
   }
 
   /**
@@ -161,6 +186,10 @@ public class DataType {
 
   public static void setDataTypeList(List<DataType> supportedDataTypeList) {
     DataType.supportedDataTypeList = Collections.unmodifiableList(supportedDataTypeList);
+  }
+
+  public String getArg() {
+    return arg;
   }
 
   public String getName() {
