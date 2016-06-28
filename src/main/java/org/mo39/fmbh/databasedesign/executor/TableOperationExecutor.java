@@ -127,9 +127,7 @@ public abstract class TableOperationExecutor {
       if (!NamingUtils.checkNamingConventions(table)) {
         throw new BadUsageException("Bad table name.");
       }
-      for (String col : content.split("\\,")) {
-        columns.add(Column.newColumnDefinition(col));
-      }
+      columns = Column.newColumnDefinition(content);      
       String schema = Status.getCurrentSchema();
       if (FileUtils.getTables(schema).contains(table)) {
         endMessage = "Table - '" + table + "' already exists.";

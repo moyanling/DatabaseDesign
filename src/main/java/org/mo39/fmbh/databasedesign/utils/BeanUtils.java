@@ -18,27 +18,27 @@ import org.mo39.fmbh.databasedesign.model.DBExceptions;
  */
 public abstract class BeanUtils {
 
-  /**
-   * Parse Column List to create a bean.
-   *
-   * @param beanClass
-   * @param columns
-   * @return
-   */
-  public static final <T> T parse(Class<T> beanClass, List<Column> columns) {
-    try {
-      T toRet = beanClass.newInstance();
-      for (Column col : columns) {
-        String methodName = "set" + WordUtils.capitalize(col.getName());
-        Method m = findMethod(beanClass, methodName, col.getDataType().getName());
-        m.invoke(toRet, col.getValue());
-      }
-      return toRet;
-    } catch (Exception e) {
-      DBExceptions.newError(e);
-    }
-    return null;
-  }
+//  /**
+//   * Parse Column List to create a bean.
+//   *
+//   * @param beanClass
+//   * @param columns
+//   * @return
+//   */
+//  public static final <T> T parse(Class<T> beanClass, List<Column> columns) {
+//    try {
+//      T toRet = beanClass.newInstance();
+//      for (Column col : columns) {
+//        String methodName = "set" + WordUtils.capitalize(col.getName());
+//        Method m = findMethod(beanClass, methodName, col.getDataType().getName());
+//        m.invoke(toRet, col.getValue());
+//      }
+//      return toRet;
+//    } catch (Exception e) {
+//      DBExceptions.newError(e);
+//    }
+//    return null;
+//  }
 
   /**
    * Find a method from a class.

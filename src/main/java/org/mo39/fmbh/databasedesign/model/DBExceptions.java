@@ -19,6 +19,15 @@ public class DBExceptions extends Exception {
     throw new Error();
   }
 
+  /**
+   * Print the error message and give it a fast-fail error.
+   *
+   * @param e
+   */
+  public static void newError(String e) {
+    throw new Error(e);
+  }
+
   public DBExceptions() {}
 
   public DBExceptions(String description) {

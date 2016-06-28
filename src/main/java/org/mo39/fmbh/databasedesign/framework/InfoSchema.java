@@ -29,10 +29,6 @@ import com.google.common.io.Files;
  */
 public abstract class InfoSchema {
 
-  private static String SCHEMATA_DEFINITION = "SCHEMA_NAME VARCHAR(20)";
-  private static String TABLES_DEFINITION = "TABLE_SCHEMA | TABLE_NAME | TABLE_ROWS";
-  private static String COLUMNS_DEFINITION = "TABLE_SCHEMA | TABLE_NAME | COLUMN NAME | ORDINAL_POSITION | COLUMN_TYPE | IS_NULLABLE | COLUMN_KEY";
-
   private static File schemata = tblRef(INFO_SCHEMA, SCHEMAS);
   private static File tables = tblRef(INFO_SCHEMA, TABLES);
   private static File columns = tblRef(INFO_SCHEMA, COLUMNS);

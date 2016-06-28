@@ -63,7 +63,7 @@ public abstract class FileUtils {
   public static final File tblRef(String schema, String table) {
     checkArgument(schema != null && table != null);
     return schema.equals(SystemProperties.INFO_SCHEMA)
-        ? Paths.get(FileUtils.ARCHIVE_ROOT, schema + "." + table + ".tbl").toFile()
+        ? Paths.get(FileUtils.ARCHIVE_ROOT, schema + "." + table + ".csv").toFile()
         : Paths.get(FileUtils.ARCHIVE_ROOT, schema, table + ".tbl").toFile();
   }
 

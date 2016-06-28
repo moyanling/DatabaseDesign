@@ -121,7 +121,7 @@ public abstract class DataTypeParsingUtils {
       case "java.lang.Float":
         return Float.TYPE;
       default:
-        throw new Error("Primitive type not found");
+        throw new Error("Not a primitive type. Method not found.");
     }
   }
 

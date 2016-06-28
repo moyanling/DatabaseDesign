@@ -2,8 +2,3 @@ Information_Schema,SCHEMATA,SCHEMA_NAME,1,varchar(64),NO,
 Information_Schema,TABLES,TABLE_SCHEMA,1,varchar(64),NO,
 Information_Schema,TABLES,TABLE_NAME,2,varchar(64),NO,
 Information_Schema,TABLES,TABLE_ROWS,3,int,NO,
-schema_1,table_1,column_1,1,NO,PRI
-schema_1,table_1,column_2,2,NO,
-schema_1,table_1,column_3,3,YES,
-schema_1,table_2,column_1,1,NO,PRI
-schema_1,table_2,column_2,2,YES,

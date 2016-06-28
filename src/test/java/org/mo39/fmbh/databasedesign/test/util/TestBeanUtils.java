@@ -12,6 +12,10 @@ import org.mo39.fmbh.databasedesign.utils.DataTypeParsingUtils;
 
 
 public class TestBeanUtils {
+  
+  public static Object get(){
+    return 1;
+  }
 
   @Before
   public void before() {
@@ -32,7 +36,7 @@ public class TestBeanUtils {
     t1.setId(1);
     t1.setDescription("description");
     System.out.println(BeanUtils.beanToString(t1));
-    System.out.println(BeanUtils.beanToString(Column.newColumnDefinition("SCHEMA_NAME VARCHAR(20)")));
+    System.out.println(BeanUtils.beanToString(Column.newColumnDefinition("SCHEMA_NAME VARCHAR(20)").get(0)));
   }
 
 }
