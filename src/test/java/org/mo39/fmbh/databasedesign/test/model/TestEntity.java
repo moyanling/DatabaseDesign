@@ -4,7 +4,6 @@ public class TestEntity {
 
   private int id;
   private String description;
-  private Object ref;
 
   public int getId() {
     return id;
@@ -20,14 +19,6 @@ public class TestEntity {
 
   public void setDescription(String description) {
     this.description = description;
-  }
-
-  public Object getRef() {
-    return ref;
-  }
-
-  public void setRef(Object ref) {
-    this.ref = ref;
   }
 
 }

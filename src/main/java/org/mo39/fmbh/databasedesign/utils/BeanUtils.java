@@ -1,6 +1,7 @@
 package org.mo39.fmbh.databasedesign.utils;
 
 import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -9,6 +10,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.text.WordUtils;
 import org.mo39.fmbh.databasedesign.model.Column;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
+import org.mo39.fmbh.databasedesign.model.DataType;
 
 /**
  * Simple ORM without hbm.xml file.
@@ -18,27 +20,29 @@ import org.mo39.fmbh.databasedesign.model.DBExceptions;
  */
 public abstract class BeanUtils {
 
-//  /**
-//   * Parse Column List to create a bean.
-//   *
-//   * @param beanClass
-//   * @param columns
-//   * @return
-//   */
-//  public static final <T> T parse(Class<T> beanClass, List<Column> columns) {
-//    try {
-//      T toRet = beanClass.newInstance();
-//      for (Column col : columns) {
-//        String methodName = "set" + WordUtils.capitalize(col.getName());
-//        Method m = findMethod(beanClass, methodName, col.getDataType().getName());
-//        m.invoke(toRet, col.getValue());
-//      }
-//      return toRet;
-//    } catch (Exception e) {
-//      DBExceptions.newError(e);
-//    }
-//    return null;
-//  }
+  /**
+   * Parse a byte array according to Column definitions to create a bean.
+   *
+   * @param beanClass
+   * @param columns
+   * @return
+   */
+  public static final <T> T parse(Class<T> beanClass, List<Column> columns, ByteBuffer record) {
+    try {
+      T toRet = beanClass.newInstance();
+      for (Column col : columns) {
+        String methodName = "set" + WordUtils.capitalize(col.getName());
+        Method m = findMethod(beanClass, methodName, col.getDataType().getJavaClass());
+        m.invoke(toRet,
+            DataType.class.getMethod(col.getDataType().getParseFromByteBuffer(), ByteBuffer.class)
+                .invoke(null, record));
+      }
+      return toRet;
+    } catch (Exception e) {
+      DBExceptions.newError(e);
+    }
+    return null;
+  }
 
   /**
    * Find a method from a class.
@@ -54,7 +58,7 @@ public abstract class BeanUtils {
       m = beanClass.getMethod(method, Class.forName(classType));
     } catch (NoSuchMethodException e) {
       try {
-        m = beanClass.getMethod(method, DataTypeParsingUtils.converToPrimitiveType(classType));
+        m = beanClass.getMethod(method, DataType.converToPrimitiveType(classType));
       } catch (Exception ex) {
         DBExceptions.newError(ex);
       }
