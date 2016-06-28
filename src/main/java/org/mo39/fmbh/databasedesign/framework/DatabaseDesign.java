@@ -2,78 +2,75 @@ package org.mo39.fmbh.databasedesign.framework;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Scanner;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.mo39.fmbh.databasedesign.executor.Executable;
-import org.mo39.fmbh.databasedesign.executor.Executable.IsReadOnly;
 import org.mo39.fmbh.databasedesign.executor.Executable.RequiresActiveSchema;
-import org.mo39.fmbh.databasedesign.framework.DatabaseDesignExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
+import org.mo39.fmbh.databasedesign.model.Cmd;
+import org.mo39.fmbh.databasedesign.model.Constraint;
+import org.mo39.fmbh.databasedesign.model.DBExceptions;
+import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
+import org.mo39.fmbh.databasedesign.model.DataType;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class DatabaseDesign {
 
-  private List<Cmd> supportedCmdList;
-  private Map<String, String> SystemProperties;
-
   /**
-   * Check whether input string is supported. If returns true, {@link SupportedCmds#runCmd} can be
-   * called.
+   * Initialize.
    *
-   * @param arg
-   * @return Returns true if supports. Otherwise false.
    */
-  public boolean supports(String arg) {
-    for (Cmd cmd : supportedCmdList) {
-      Pattern regx = Pattern.compile(cmd.getRegx(), Pattern.CASE_INSENSITIVE);
-      Matcher matcher = regx.matcher(arg);
-      if (matcher.matches()) {
-        cmd.setCmdStr(arg);
-        Status.setCurrentCmd(cmd);
-        return true;
-      }
-    }
-    return false;
+  @SuppressWarnings("unchecked")
+  public DatabaseDesign() {
+    // ----------------------
+    @SuppressWarnings("resource")
+    ApplicationContext ctx = new ClassPathXmlApplicationContext("applicationContext.xml");
+    // ----------------------
+    Cmd.setCmdList((List<Cmd>) ctx.getBean("supportedCmdList"));
+    DataType.setDataTypeList((List<DataType>) ctx.getBean("supportedDataTypeList"));
+    Constraint.setConstraintList((List<Constraint>) ctx.getBean("supportedConstraintList"));
+    SystemProperties.setSystemProperties((Map<String, String>) ctx.getBean("systemProperties"));
   }
 
+  private static Scanner scan = new Scanner(System.in);
+
   /**
-   * Run command. The command can only be run after {@link SupportedCmds#supports} function is
-   * called and returns true.
+   * Run command. The method would set the current cmd in Status to the input cmd.
    * <p>
    * The method provides several features:<br>
-   * &emsp;- check state according to annotation {@link RequiresActiveSchema}<br>
-   * &emsp;- check if execute method is read only operation according to annotation
-   * {@link IsReadOnly}<br>
+   * &emsp;- pre-execution check<br>
    * &emsp;- view result according to Viewable interface (if implemented) right after the execution
    * finishes<br>
    * &emsp;- catch certain execeptions, display the message and consider the execution a failure (in
    * which case the Viewable result will not be displayed).<br>
    *
    */
-  public void runCmd() {
-    if (Status.getCurrentCmd() == null) {
-      throw new IllegalStateException("Please check whether cmd is supported first.");
-    }
+  public void runCmd(Cmd cmd) {
+    Status.setCurrentCmd(cmd);
     try {
-      Class<?> klass = Class.forName(Status.getCurrentCmd().getExecutorClassName());
+      Class<?> klass = Class.forName(cmd.getExecutorClassName());
       if (Executable.class.isAssignableFrom(klass)) {
+        // ----------------------
         Executable executor = Executable.class.cast(klass.newInstance());
         Method method = executor.getClass().getMethod("execute");
-        checkOperationAnnotation(method);
-        method.invoke(executor);
-        if (executor instanceof Viewable) {
-          View.newView(Viewable.class.cast(executor));
+        // ----------------------
+        if (checkAnnotation(method)) {
+          method.invoke(executor);
+          if (executor instanceof Viewable) {
+            View.newView(Viewable.class.cast(executor));
+          }
+          InfoSchema.validate();
         }
       }
-    } catch (IllegalStateException e) {
-      String message = e.getMessage();
-      if (message == null) {
-        message = "";
-      }
-      View.newView("Illegal state. " + message);
     } catch (InvocationTargetException e) {
       Throwable ex;
       if ((ex = e.getCause()) instanceof BadUsageException) {
@@ -81,38 +78,99 @@ public class DatabaseDesign {
         if (message == null) {
           message = "";
         }
-        View.newView("Bad usage for '" + Status.getCurrentCmd().getName() + "'. " + message);
+        View.newView("Bad usage for '" + cmd.getName() + "'. " + message);
       }
     } catch (Exception e) {
-      e.printStackTrace();
-      throw new Error();
+      DBExceptions.newError(e);
     } finally {
       Status.endRunCmd();
     }
   }
 
-  private void checkOperationAnnotation(Method method) {
-    if (method.getAnnotation(RequiresActiveSchema.class) != null) {
-      if (!Status.hasActiveSchema()) {
-        throw new IllegalStateException("No schema is activated for operation.");
+  /**
+   * Response to "-a" or "--all" option
+   *
+   * @param dbDesign
+   */
+  public static void optionAll(DatabaseDesign dbDesign) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Supported commands: \n\n");
+    for (Cmd cmd : Cmd.getCmdList()) {
+      sb.append("\t" + cmd.getName() + " \n\t\t- " + cmd.getDescription() + "\n\n");
+    }
+    sb.append("Supported Data Types: \n\n");
+    for (DataType type : DataType.getDataTypeList()) {
+      sb.append("\t" + type.getName() + " \n\t\t- " + type.getDescription() + "\n\n");
+    }
+    sb.append("Supported constraints: \n\n");
+    for (Constraint constraint : Constraint.getConstraintList()) {
+      sb.append("\t" + constraint.getName() + " \n\t\t- " + constraint.getDescription() + "\n\n");
+    }
+    sb.append(SystemProperties.get("usageInstruction"));
+    View.newView(sb.toString());
+  }
+
+  /**
+   * Response to "-r" or "--run" option
+   *
+   * @param dbDesign
+   */
+  public static void optionRun(DatabaseDesign dbDesign) {
+    View.newView(SystemProperties.get("welcome"));
+    while (true) {
+      View.newView(SystemProperties.get("prompt"));
+      StringBuilder arg = new StringBuilder();
+      String query = null;
+      for (int i = 0; i <= 10; i++) {
+        arg.append(scan.nextLine() + " ");
+        if ((query = arg.toString().trim()).endsWith(";")) {
+          break;
+        }
+      }
+      Cmd cmd = Cmd.supports(query);
+      if (cmd != null) {
+        dbDesign.runCmd(cmd);
+      } else {
+        View.newView("Unsupported Operation.");
       }
     }
   }
 
-  public List<Cmd> getSupportedCmdList() {
-    return supportedCmdList;
+  private static boolean checkAnnotation(Method method) {
+    if (method.getAnnotation(RequiresActiveSchema.class) != null) {
+      if (!Status.hasActiveSchema()) {
+        View.newView("Illegal state. No active schema is found");
+        return false;
+      }
+    }
+    return true;
   }
 
-  public void setSupportedCmdList(List<Cmd> supportedCmdList) {
-    this.supportedCmdList = supportedCmdList;
-  }
-
-  public Map<String, String> getSystemProperties() {
-    return SystemProperties;
-  }
-
-  public void setSystemProperties(Map<String, String> systemProperties) {
-    SystemProperties = Collections.unmodifiableMap(systemProperties);
+  public static void main(String[] args) {
+    DatabaseDesign dbDesign = new DatabaseDesign();
+    InfoSchema.init();
+    InfoSchema.validate();
+    // ----------------------
+    Options opts = new Options();
+    CommandLineParser parser = new DefaultParser();
+    opts.addOption("h", "help", false, "Help description.");
+    opts.addOption("r", "run", false, "Start to run database.");
+    opts.addOption("a", "all", false, "Show all supported Database commands.");
+    // ----------------------
+    CommandLine cl = null;
+    try {
+      cl = parser.parse(opts, args);
+    } catch (ParseException e) {
+      DBExceptions.newError(e);
+    }
+    // ----------------------
+    if (cl.hasOption('r')) {
+      optionRun(dbDesign);
+    } else if (cl.hasOption('a')) {
+      optionAll(dbDesign);
+    } else {
+      new HelpFormatter().printHelp(" ", opts);
+    }
   }
 
 }

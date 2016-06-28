@@ -1,5 +1,7 @@
 package org.mo39.fmbh.databasedesign.framework;
 
+import org.mo39.fmbh.databasedesign.model.Cmd;
+
 /**
  * This presents the current status of database. Includes but not limited to the schema, table and
  * SQL currently using. The class is run in threads and have a thread local copy per thread.
@@ -37,6 +39,8 @@ public class Status {
   public static void setCurrentSchema(String currentSchema) {
     Status.currentSchema = currentSchema;
   }
+
+  // ------------------------------- protected -------------------------------
 
   /**
    * When the command run is finished, the currentCmd field is set back to null. This is called only

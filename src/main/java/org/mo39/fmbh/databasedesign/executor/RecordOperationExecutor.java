@@ -1,9 +1,9 @@
 package org.mo39.fmbh.databasedesign.executor;
 
-import org.mo39.fmbh.databasedesign.framework.DatabaseDesignExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
+import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
 
-public abstract class BasicRecordOperationExecutor {
+public abstract class RecordOperationExecutor {
 
   public static class InsertIntoTable implements Executable, Viewable {
 

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans 
+	xmlns="http://www.springframework.org/schema/beans"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans 
+	   	http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+	   	http://www.springframework.org/schema/context   
+	   	http://www.springframework.org/schema/context/spring-context-4.2.xsd
+	   	http://www.springframework.org/schema/util 
+		http://www.springframework.org/schema/util/spring-util.xsd
+		">
+
+	<util:list id="supportedDataTypeList">
+	
+		<bean id="byte" class="org.mo39.fmbh.databasedesign.model.DataType">
+			<property name="name" value="BYTE"/>
+			<property name="regx" value="BYTE"/>
+			<property name="description" value="A signed two’s compliment byte: range -128 to 127"/>
+			<property name="javaClass" value="java.lang.Integer"/>
+			<property name="parseToByte" value="org.mo39.fmbh.databasedesign.utils.DataTypeParsingUtils#parseByteToBytes"/>
+			<property name="parseFromByte" value="org.mo39.fmbh.databasedesign.utils.DataTypeParsingUtils#parseByteFromBytes"/>
+		</bean>
+		
+		<bean id="int" class="org.mo39.fmbh.databasedesign.model.DataType">
+			<property name="name" value="INT"/>
+			<property name="regx" value="INT"/>
+			<property name="description" value="A signed two’s compliment integer: range -2147483648 to 2147483647" />
+			<property name="javaClass" value="java.lang.Integer"/>
+			<property name="parseToByte" value="org.mo39.fmbh.databasedesign.utils.DataTypeParsingUtils#parseIntToBytes"/>
+			<property name="parseFromByte" value="org.mo39.fmbh.databasedesign.utils.DataTypeParsingUtils#parseIntFromBytes"/>
+		</bean>
+		
+		<bean id="long" class="org.mo39.fmbh.databasedesign.model.DataType">
+			<property name="name" value="INT"/>
+			<property name="regx" value="INT"/>
+			<property name="description" value="A signed two’s compliment integer: range -2147483648 to 2147483647" />
+			<property name="javaClass" value="java.lang.Long"/>
+			<property name="parseToByte" value="org.mo39.fmbh.databasedesign.utils.DataTypeParsingUtils#parseLongToBytes"/>
+			<property name="parseFromByte" value="org.mo39.fmbh.databasedesign.utils.DataTypeParsingUtils#parseLongFromBytes"/>
+		</bean>
+		
+		<bean id="varChar" class="org.mo39.fmbh.databasedesign.model.DataType">
+			<property name="name" value="VARCHAR"/>
+			<property name="regx" value="VARCHAR\([0-9]+\)"/>
+			<property name="description" value="A variable length ASCII string with a maximum of n characters. n may be 0-127. Each instance is prepended with an unsigned byte indicating the number of ASCII characters that follow." />
+			<property name="javaClass" value="java.lang.Integer"/>
+			<property name="parseToByte" value="org.mo39.fmbh.databasedesign.utils.DataTypeParsingUtils#parseVarCharToBytes"/>
+			<property name="parseFromByte" value="org.mo39.fmbh.databasedesign.utils.DataTypeParsingUtils#parseVarCharFromBytes"/>
+		</bean>
+		
+	</util:list>
+
+</beans>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -3,10 +3,11 @@ package org.mo39.fmbh.databasedesign.executor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.mo39.fmbh.databasedesign.framework.DatabaseDesignExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.framework.Status;
 import org.mo39.fmbh.databasedesign.framework.View;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
+import org.mo39.fmbh.databasedesign.model.DBExceptions;
+import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
 
 public class ExitDatabase implements Executable, Viewable {
 
@@ -22,7 +23,7 @@ public class ExitDatabase implements Executable, Viewable {
 
   @Override
   @IsReadOnly
-  public void execute() {
+  public void execute() throws DBExceptions {
     cmdStr = Status.getCurrentCmdStr();
 
     Pattern regx = Pattern.compile(REGX, Pattern.CASE_INSENSITIVE);

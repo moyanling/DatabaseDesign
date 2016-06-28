@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans 
+	xmlns="http://www.springframework.org/schema/beans"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans 
+	   	http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+	   	http://www.springframework.org/schema/context   
+	   	http://www.springframework.org/schema/context/spring-context-4.2.xsd
+	   	http://www.springframework.org/schema/util 
+		http://www.springframework.org/schema/util/spring-util.xsd
+		">
+
+	<util:list id="supportedConstraintList">
+		
+		<bean id="primaryKey" class="org.mo39.fmbh.databasedesign.model.Constraint$PrimaryKey">
+			<property name="name" value="PRIMARY KEY"/>
+			<property name="regx" value="^PRIMARY\s+KEY$"/>
+			<property name="description" value="Assign the column as the primary key." />
+		</bean>
+		
+		<bean id="notNull" class="org.mo39.fmbh.databasedesign.model.Constraint$NotNull">
+			<property name="name" value="NOT NULL"/>
+			<property name="regx" value="^NOT\s+NULL$"/>
+			<property name="description" value="to indicate that NULL values are not permitted for a particular column." />
+		</bean>
+		
+		
+	</util:list>
+
+</beans>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
