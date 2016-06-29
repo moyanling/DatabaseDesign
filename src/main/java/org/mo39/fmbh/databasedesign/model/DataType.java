@@ -58,7 +58,6 @@ public class DataType {
         if (len < value.length()) {
           return false;
         }
-        return true;
       default:
         return true;
     }
@@ -153,33 +152,7 @@ public class DataType {
   public static final long parseLongFromByteBuffer(ByteBuffer bb) {
     return bb.getLong();
   }
-
-  /**
-   * Convert from class to corresponding primitive type.
-   *
-   * @param classType
-   * @return
-   */
-  public static Class<?> converToPrimitiveType(String classType) {
-    switch (classType) {
-      case "java.lang.Integer":
-        return Integer.TYPE;
-      case "java.lang.Byte":
-        return Byte.TYPE;
-      case "java.lang.Short":
-        return Short.TYPE;
-      case "java.lang.Long":
-        return Long.TYPE;
-      case "java.lang.Double":
-        return Double.TYPE;
-      case "java.lang.Float":
-        return Float.TYPE;
-      default:
-        DBExceptions.newError("Not a primitive type. Method not found.");
-        return null;
-    }
-  }
-
+  
   public static List<DataType> getDataTypeList() {
     return supportedDataTypeList;
   }

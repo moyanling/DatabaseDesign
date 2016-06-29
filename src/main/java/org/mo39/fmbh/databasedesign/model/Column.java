@@ -18,7 +18,7 @@ public class Column {
   private DataType dataType;
   private Constraint constraint;
 
-  private static final String COLUMN_DEFINITION = "^(.*?)\\s+(.*?)(\\s*?$|\\s+(.*?)\\s*?$)";
+  private static final String COLUMN_REGX = "^(.*?)\\s+(.*?)(\\s*?$|\\s+(.*?)\\s*?$)";
 
   private Column(String name, DataType dataType, Constraint constraint) {
     this.name = name;
@@ -31,7 +31,7 @@ public class Column {
     try {
       for (String columnDef : content.split(",")) {
         String colDef = columnDef.trim();
-        Pattern regx = Pattern.compile(COLUMN_DEFINITION);
+        Pattern regx = Pattern.compile(COLUMN_REGX);
         Matcher matcher = regx.matcher(colDef);
         matcher = regx.matcher(colDef);
         // ----------------------

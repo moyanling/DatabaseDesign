@@ -105,9 +105,9 @@ public abstract class SchemaOperationExecutor {
       if (schema == null) {
         throw new BadUsageException();
       }
-      if (SystemProperties.INFO_SCHEMA.equals(schema)) {
+      if (SystemProperties.get("infoSchema").equals(schema)) {
         throw new BadUsageException(
-            SystemProperties.INFO_SCHEMA + " is resevered. Please use others instead.");
+            SystemProperties.get("infoSchema") + " is resevered. Please use others instead.");
       }
       if (FileUtils.getSchemas().contains(schema)) {
         endMessage = "Schema - '" + schema + "' already exists.";

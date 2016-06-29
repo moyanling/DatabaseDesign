@@ -28,7 +28,7 @@ import com.google.common.collect.Sets;
  */
 public abstract class FileUtils {
 
-  static final String ARCHIVE_ROOT = SystemProperties.ARCHIVE_ROOT;
+  static final String ARCHIVE_ROOT = SystemProperties.get("archiveRoot");
 
   static final Pattern NDX_FILE = Pattern.compile(".*\\.ndx");
   static final Pattern TBL_FILE = Pattern.compile(".*\\.tbl");
@@ -62,7 +62,7 @@ public abstract class FileUtils {
    */
   public static final File tblRef(String schema, String table) {
     checkArgument(schema != null && table != null);
-    return schema.equals(SystemProperties.INFO_SCHEMA)
+    return schema.equals(SystemProperties.get("infoSchema"))
         ? Paths.get(FileUtils.ARCHIVE_ROOT, schema + "." + table + ".csv").toFile()
         : Paths.get(FileUtils.ARCHIVE_ROOT, schema, table + ".tbl").toFile();
   }
@@ -88,7 +88,7 @@ public abstract class FileUtils {
    */
   public static boolean createSchema(String schema) throws IOException {
     if (Paths.get(ARCHIVE_ROOT, schema).toFile().mkdirs()) {
-      InfoSchemaUtils.updateAtCreatingSchema(schema);
+      InfoSchema.updateAtCreatingSchema(schema);
       return true;
     }
     return false;
@@ -105,7 +105,7 @@ public abstract class FileUtils {
   public static boolean createtblFile(String schema, String table, List<Column> columns)
       throws IOException {
     if (tblRef(schema, table).createNewFile()) {
-      InfoSchemaUtils.updateAtCreatingTable(schema, table, columns);
+      InfoSchema.updateAtCreatingTable(schema, table, columns);
       return true;
     }
     return false;
@@ -120,7 +120,7 @@ public abstract class FileUtils {
    */
   public static boolean deleteTable(String schema, String table) {
     if (tblRef(schema, table).delete()) {
-      if (InfoSchemaUtils.updateAtDroppingTable(schema, table)) {
+      if (InfoSchema.updateAtDroppingTable(schema, table)) {
         return true;
       }
     }
@@ -141,7 +141,7 @@ public abstract class FileUtils {
       }
     }
     if (Paths.get(ARCHIVE_ROOT, schema).toFile().delete()) {
-      if (InfoSchemaUtils.updateAtDeletingSchema(schema)) {
+      if (InfoSchema.updateAtDeletingSchema(schema)) {
         return true;
       }
     }
@@ -156,7 +156,7 @@ public abstract class FileUtils {
    *         {@link Collections#unmodifiableSet}
    */
   public static Set<String> getSchemas() {
-    return InfoSchemaUtils.getSchemas();
+    return InfoSchema.getSchemas();
   }
 
 
@@ -169,7 +169,7 @@ public abstract class FileUtils {
    *         {@link Collections#unmodifiableSet}
    */
   public static Set<String> getTables(String schema) {
-    return InfoSchemaUtils.getTables(schema);
+    return InfoSchema.getTables(schema);
   }
 
   /**

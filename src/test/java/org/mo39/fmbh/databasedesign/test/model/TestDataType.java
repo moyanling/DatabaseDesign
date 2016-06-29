@@ -44,5 +44,20 @@ public class TestDataType {
     Assert.assertEquals("Hello world", DataType.parseVarCharFromByteBuffer(bb1));
   }
 
+  @Test
+  public void testSwitch() {
+    StringBuilder sb = new StringBuilder();
+    String a = "1";
+    switch (a) {
+      case "1":
+        if (a.equals("1")) {
+          sb.append("Hello ");
+        }
+      default:
+        sb.append("world");
+    }
+    Assert.assertEquals("Hello world", sb.toString());
+  }
+
 
 }

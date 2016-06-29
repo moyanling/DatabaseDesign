@@ -7,16 +7,6 @@ import java.util.Map;
 
 public abstract class SystemProperties {
 
-  public static final String INFO_SCHEMA = "Information_Schema";
-  
-  public static final String SCHEMAS = "SCHEMATA";
-  public static final String TABLES = "TABLES";
-  public static final String COLUMNS = "COLUMNS";
-  
-  public static final String ARCHIVE_ROOT = ".\\archive";
-  public static final String DELIMITER = ",";
-  public static final String LINE_BREAK = "\n";
-
   private static Map<String, String> systemProperties;
 
   public static void setSystemProperties(Map<String, String> systemProperties) {

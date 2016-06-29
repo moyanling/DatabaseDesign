@@ -7,6 +7,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import org.mo39.fmbh.databasedesign.model.Table;
+
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 
@@ -57,7 +59,7 @@ public abstract class TblUtils {
     return true;
   }
 
-  public static void appendRecordTotbl(byte[] record, String schema, String table) {
+  public static void appendRecordsToDB(Table t, String schema, String table) {
     File tbl = FileUtils.tblRef(schema, table);
     // TODO
     // TODO updata ndx file.

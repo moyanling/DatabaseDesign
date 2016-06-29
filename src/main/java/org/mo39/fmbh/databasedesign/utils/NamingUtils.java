@@ -1,8 +1,5 @@
 package org.mo39.fmbh.databasedesign.utils;
 
-import static org.mo39.fmbh.databasedesign.framework.SystemProperties.DELIMITER;
-import static org.mo39.fmbh.databasedesign.framework.SystemProperties.LINE_BREAK;
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -48,7 +45,8 @@ public abstract class NamingUtils {
    * @return
    */
   public static String join(Object... objects) {
-    return Joiner.on(DELIMITER).join(objects) + LINE_BREAK;
+    return Joiner.on(SystemProperties.get("delimiter")).join(objects)
+        + SystemProperties.get("lineBreak");
   }
 
   /**
