@@ -119,4 +119,21 @@ public class DBExceptions extends Exception {
     }
   }
 
+  /**
+   * Indicates that there is an error when adding new record. For example, the length of values is
+   * not consistent with the number of the columns.
+   *
+   * @author Jihan Chen
+   *
+   */
+  public static class AddRecordException extends DBExceptions {
+    private static final long serialVersionUID = 1L;
+
+    public AddRecordException() {}
+
+    public AddRecordException(String description) {
+      super(description);
+    }
+  }
+
 }

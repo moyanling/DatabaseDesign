@@ -51,11 +51,9 @@ public class DataType {
     DataType dt = col.getDataType();
     switch (dt.name) {
       case "VARCHAR":
-        Pattern regx = Pattern.compile(dt.regx, Pattern.CASE_INSENSITIVE);
-        Matcher matcher = regx.matcher(dt.arg);
+        Matcher matcher = Pattern.compile(dt.regx, Pattern.CASE_INSENSITIVE).matcher(dt.arg);
         matcher.matches();
-        int len = Integer.parseInt(matcher.group(1));
-        if (len < value.length()) {
+        if (Integer.parseInt(matcher.group(1)) < value.length()) {
           return false;
         }
       default:
@@ -152,7 +150,7 @@ public class DataType {
   public static final long parseLongFromByteBuffer(ByteBuffer bb) {
     return bb.getLong();
   }
-  
+
   public static List<DataType> getDataTypeList() {
     return supportedDataTypeList;
   }
