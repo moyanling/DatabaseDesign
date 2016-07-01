@@ -32,6 +32,7 @@
 		<entry key="tables" value="${archive.tables}" />
 		<entry key="columns" value="${archive.columns}" />
 		
+		<entry key="tab" value="${sys.table}"/>
 		<entry key="delimiter" value="${sys.delimiter}" />
 		<entry key="lineBreak" value="${sys.lineBreak}" />
 	</util:map>

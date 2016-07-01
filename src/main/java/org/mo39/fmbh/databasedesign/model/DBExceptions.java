@@ -10,7 +10,12 @@ package org.mo39.fmbh.databasedesign.model;
 public class DBExceptions extends Exception {
 
   /**
-   * Print the error stack track and give it a fast-fail error.
+   * Print the error stack track and give it a fast-fail error. This function is used when an
+   * exceptions like IOException is thrown during execution. This project is not supposed to do
+   * log-back or handle these native Exceptions. Hopefully IOExceptions won't happen. But when it
+   * happens, it's possible the data in the databse is badly damaged. For example, the funtion
+   * writing records to DB is interrupted and the data in the file then become a mess, which can no
+   * longer be read correctly and requires a fix manually.
    *
    * @param e
    */
@@ -50,6 +55,7 @@ public class DBExceptions extends Exception {
       super(description);
     }
   }
+
   /**
    * Indicates the insert record does not observe the constraint.
    *
@@ -133,6 +139,21 @@ public class DBExceptions extends Exception {
 
     public AddRecordException(String description) {
       super(description);
+    }
+  }
+
+  /**
+   * Warp a ClassNotFoundException to DBExceptions. This should be used when select record from
+   * database.
+   *
+   * @author Jihan Chen
+   *
+   */
+  public static class ClassNotFound extends DBExceptions {
+    private static final long serialVersionUID = 1L;
+
+    public ClassNotFound(ClassNotFoundException e) {
+      super(e.getMessage());
     }
   }
 

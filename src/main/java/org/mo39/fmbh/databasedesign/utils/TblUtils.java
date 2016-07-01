@@ -5,7 +5,11 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
+import java.util.Set;
 
 import org.mo39.fmbh.databasedesign.model.Table;
 
@@ -59,10 +63,20 @@ public abstract class TblUtils {
     return true;
   }
 
-  public static void appendRecordsToDB(Table t, String schema, String table) {
+  public static void appendRecordsToDB(Table t, String schema, String table) throws IOException {
     File tbl = FileUtils.tblRef(schema, table);
-    // TODO
+    OutputStream out = Files.newOutputStream(tbl.toPath(), StandardOpenOption.APPEND);
+    for (byte[] record : t) {
+      out.write(record);
+    }
     // TODO updata ndx file.
     // TODO updata information schema.
   }
+
+  public static Set<Object> selectFromDB(String currentSchema, String table, String whereClause) {
+    // TODO Auto-generated method stub
+    return null;
+  }
 }
+
+

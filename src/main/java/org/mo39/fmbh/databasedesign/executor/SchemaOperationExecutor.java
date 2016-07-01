@@ -28,6 +28,8 @@ public abstract class SchemaOperationExecutor {
   public static class ShowSchemas implements Executable, Viewable {
 
     private String endMessage;
+    private String tab = SystemProperties.get("tab");
+    private String lineBreak = SystemProperties.get("lineBreak");
 
     @Override
     @IsReadOnly
@@ -36,12 +38,12 @@ public abstract class SchemaOperationExecutor {
       String currentSchema = Status.getCurrentSchema();
       StringBuilder sb = new StringBuilder("Show Schemas: ");
       if (schemaSet.size() == 0) {
-        sb.append("\n\tNone");
+        sb.append(lineBreak + tab + "None");
       } else {
         for (String schema : schemaSet) {
-          sb.append("\n\t" + schema + "\n");
+          sb.append(lineBreak + tab + schema + lineBreak);
         }
-        sb.append("\nCurrently activated schema: ");
+        sb.append(lineBreak + "Currently activated schema: ");
         sb.append(currentSchema == null ? "None" : currentSchema);
       }
       endMessage = sb.toString();

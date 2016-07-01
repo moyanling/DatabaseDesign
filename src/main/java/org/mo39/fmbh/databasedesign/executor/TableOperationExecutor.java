@@ -8,6 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.mo39.fmbh.databasedesign.framework.Status;
+import org.mo39.fmbh.databasedesign.framework.SystemProperties;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
 import org.mo39.fmbh.databasedesign.model.Column;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
@@ -33,6 +34,8 @@ public abstract class TableOperationExecutor {
    */
   public static class ShowTables implements Executable, Viewable {
 
+    private String tab = SystemProperties.get("tab");
+    private String lineBreak = SystemProperties.get("lineBreak");
     private String endMessage;
 
     @Override
@@ -47,10 +50,10 @@ public abstract class TableOperationExecutor {
       Set<String> tableSet = FileUtils.getTables(Status.getCurrentSchema());
       StringBuilder sb = new StringBuilder("Show Tables: ");
       if (tableSet.size() == 0) {
-        sb.append("\n\tNone");
+        sb.append(lineBreak + tab + "None");
       } else {
         for (String table : tableSet) {
-          sb.append("\n\t" + table + "\n");
+          sb.append(lineBreak + tab + table + lineBreak);
         }
       }
       endMessage = sb.substring(0, sb.length() - 1).toString();
@@ -127,7 +130,7 @@ public abstract class TableOperationExecutor {
       if (!NamingUtils.checkNamingConventions(table)) {
         throw new BadUsageException("Bad table name.");
       }
-      columns = Column.newColumnDefinition(content);      
+      columns = Column.newColumnDefinition(content);
       String schema = Status.getCurrentSchema();
       if (FileUtils.getTables(schema).contains(table)) {
         endMessage = "Table - '" + table + "' already exists.";

@@ -1,14 +1,15 @@
 package org.mo39.fmbh.databasedesign.model;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.mo39.fmbh.databasedesign.framework.InfoSchema;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.AddRecordException;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.ConstraintViolationException;
+import org.mo39.fmbh.databasedesign.utils.FileUtils;
 import org.mo39.fmbh.databasedesign.utils.TblUtils;
 
 import com.google.common.collect.Lists;
@@ -33,7 +34,7 @@ public class Table implements Iterable<byte[]> {
    * @return
    */
   public static Table init(String schema, String table) {
-    return new Table(schema, table, InfoSchema.getColumns(schema, table));
+    return new Table(schema, table, FileUtils.getColumns(schema, table));
   }
 
   /**
@@ -59,7 +60,7 @@ public class Table implements Iterable<byte[]> {
       if (!col.getConstraint().impose(schema, table, col)) {
         System.out.println("The constraint fails");
         // TODO Uncomment me after constraint is implement.
-        // newError("Value: " + value + " does not observe the constraint "
+        // ConstraintViolationException("Value: " + value + " does not observe the constraint "
         // + col.getConstraint().getName() + " for Column " + col.getName());
       }
       try {
@@ -85,8 +86,9 @@ public class Table implements Iterable<byte[]> {
 
   /**
    * Write all records to DB. Then all the records in this Table object is cleared.
+   * @throws IOException
    */
-  public void writeToDB(String schema, String table) {
+  public void writeToDB() throws IOException {
     TblUtils.appendRecordsToDB(this, schema, table);
   }
 

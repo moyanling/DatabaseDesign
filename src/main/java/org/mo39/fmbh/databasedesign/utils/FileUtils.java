@@ -6,6 +6,8 @@ import static org.mo39.fmbh.databasedesign.utils.NamingUtils.inferTableFromtbl;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -14,24 +16,44 @@ import java.util.regex.Pattern;
 import org.mo39.fmbh.databasedesign.framework.InfoSchema;
 import org.mo39.fmbh.databasedesign.framework.SystemProperties;
 import org.mo39.fmbh.databasedesign.model.Column;
+import org.mo39.fmbh.databasedesign.model.Constraint;
+import org.mo39.fmbh.databasedesign.model.Constraint.NoConstraint;
+import org.mo39.fmbh.databasedesign.model.Constraint.NotNull;
+import org.mo39.fmbh.databasedesign.model.Constraint.PrimaryKey;
+import org.mo39.fmbh.databasedesign.model.DBExceptions;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Predicates;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.common.io.Files;
 
 /**
  * This class handles file level process within the archive. It helps to analyze certain file name,
- * acquire file names and delete files. It does not support reading or writing the content of the
- * file.
+ * create file, acquire file names, delete files and etc. It does not help to write or read the DB.
  *
  * @author Jihan Chen
  *
  */
 public abstract class FileUtils {
 
+
   static final String ARCHIVE_ROOT = SystemProperties.get("archiveRoot");
 
   static final Pattern NDX_FILE = Pattern.compile(".*\\.ndx");
   static final Pattern TBL_FILE = Pattern.compile(".*\\.tbl");
+
+  private static String delimiter = SystemProperties.get("delimiter");
+
+  private static final String INFO_SCHEMA = SystemProperties.get("InfoSchema");
+  private static final String SCHEMATA = SystemProperties.get("schemata");
+  private static final String TABLES = SystemProperties.get("tables");
+  private static final String COLUMNS = SystemProperties.get("columns");
+
+  private static File schemata = tblRef(INFO_SCHEMA, SCHEMATA);
+  private static File tables = tblRef(INFO_SCHEMA, TABLES);
+  private static File columns = tblRef(INFO_SCHEMA, COLUMNS);
 
   /**
    * Get table file list. i.e. the file ends with .tbl.
@@ -55,7 +77,7 @@ public abstract class FileUtils {
 
   /**
    * Return a tbl file reference according to schema and table name.
-   * 
+   *
    * @param schema
    * @param table
    * @return
@@ -69,7 +91,7 @@ public abstract class FileUtils {
 
   /**
    * Return a ndx file reference according to schema, table and column name.
-   * 
+   *
    * @param schema
    * @param table
    * @param column
@@ -82,13 +104,13 @@ public abstract class FileUtils {
 
   /**
    * Create a new schema i.e. a folder to hold tables.
-   * 
+   *
    * @param schema
    * @throws IOException
    */
   public static boolean createSchema(String schema) throws IOException {
     if (Paths.get(ARCHIVE_ROOT, schema).toFile().mkdirs()) {
-      InfoSchema.updateAtCreatingSchema(schema);
+      UpdateInfoSchema.atCreatingSchema(schema);
       return true;
     }
     return false;
@@ -96,19 +118,24 @@ public abstract class FileUtils {
 
   /**
    * This function will take schema as a folder and table as the tbl file name. Unless the schema is
-   * information_schema.
-   * 
+   * information_schema. Related ndx files are created at the same time.
+   *
    * @param schema
    * @param table
    * @throws IOException
    */
   public static boolean createtblFile(String schema, String table, List<Column> columns)
       throws IOException {
-    if (tblRef(schema, table).createNewFile()) {
-      InfoSchema.updateAtCreatingTable(schema, table, columns);
-      return true;
+    if (!tblRef(schema, table).createNewFile()) {
+      return false;
     }
-    return false;
+    for (Column col : columns) {
+      if (!ndxRef(schema, table, col.getName()).createNewFile()) {
+        return false;
+      }
+    }
+    UpdateInfoSchema.atCreatingTable(schema, table, columns);
+    return true;
   }
 
   /**
@@ -120,7 +147,7 @@ public abstract class FileUtils {
    */
   public static boolean deleteTable(String schema, String table) {
     if (tblRef(schema, table).delete()) {
-      if (InfoSchema.updateAtDroppingTable(schema, table)) {
+      if (UpdateInfoSchema.atDroppingTable(schema, table)) {
         return true;
       }
     }
@@ -141,7 +168,7 @@ public abstract class FileUtils {
       }
     }
     if (Paths.get(ARCHIVE_ROOT, schema).toFile().delete()) {
-      if (InfoSchema.updateAtDeletingSchema(schema)) {
+      if (UpdateInfoSchema.atDeletingSchema(schema)) {
         return true;
       }
     }
@@ -156,7 +183,7 @@ public abstract class FileUtils {
    *         {@link Collections#unmodifiableSet}
    */
   public static Set<String> getSchemas() {
-    return InfoSchema.getSchemas();
+    return InfoSchemaUtils.getSchemas();
   }
 
 
@@ -169,12 +196,23 @@ public abstract class FileUtils {
    *         {@link Collections#unmodifiableSet}
    */
   public static Set<String> getTables(String schema) {
-    return InfoSchema.getTables(schema);
+    return InfoSchemaUtils.getTables(schema);
+  }
+
+  /**
+   * Get columns for specified table.
+   *
+   * @param schemaName
+   * @return A unmodifiable list containing all Colums in the table.
+   *         {@link Collections#unmodifiableSet}
+   */
+  public static List<Column> getColumns(String schema, String table) {
+    return InfoSchemaUtils.getColumns(schema, table);
   }
 
   /**
    * Validate whether the schemas in SCHEMATA table is consistent with schema folders in archive.
-   * 
+   *
    * @return
    */
   public static boolean validateSchemas() {
@@ -190,7 +228,7 @@ public abstract class FileUtils {
 
   /**
    * Validate whether the tables in TABLES is consistent with tables in schema fold in archive.
-   * 
+   *
    * @return
    */
   public static boolean validateTables(String schema) {
@@ -219,6 +257,162 @@ public abstract class FileUtils {
       }
     }
     return Collections.unmodifiableList(fileList);
+  }
+
+  /**
+   * Helper class used to read information from info schema.
+   *
+   * @author Jihan Chen
+   *
+   */
+  private static class InfoSchemaUtils {
+    /**
+     * Get schemas from SCHEMATA.
+     *
+     * @return
+     */
+    public static Set<String> getSchemas() {
+      try {
+        List<String> lines = Files.readLines(schemata, SystemProperties.getCharset());
+        lines.remove(0);// Remove Information Schema itself.
+        return Collections.unmodifiableSet(Sets.newHashSet(lines));
+      } catch (IOException e) {
+        throw new Error(e.getMessage());
+      }
+    }
+
+    /**
+     * Get tables from TABLES.
+     *
+     * @param schema
+     * @return
+     */
+    public static Set<String> getTables(String schema) {
+      checkArgument(schema != null);
+      try {
+        List<String> lines = Files.readLines(tables, SystemProperties.getCharset());
+        Collection<String> filtered =
+            Collections2.filter(lines, Predicates.containsPattern("^" + schema));
+        Set<String> tables = Sets.newHashSet();
+        for (String table : filtered) {
+          tables.add(table.split(",")[1].trim());
+        }
+        return Collections.unmodifiableSet(Sets.newHashSet(tables));
+      } catch (IOException e) {
+        DBExceptions.newError(e);
+        return null;
+      }
+    }
+
+    public static List<Column> getColumns(String schema, String table) {
+      checkArgument(schema != null && table != null);
+      ArrayList<Column> toRet = Lists.newArrayList();
+      try {
+        List<String> lines = Files.readLines(columns, SystemProperties.getCharset());
+        Collection<String> filtered = Collections2.filter(lines,
+            Predicates.containsPattern("^" + schema + delimiter + table));
+        for (String column : filtered) {
+          String[] values = column.split(delimiter);
+          String columnName = values[2];
+          String
+        }
+
+      } catch (IOException e) {
+        DBExceptions.newError(e);
+        return null;
+      }
+
+      return toRet;
+    }
+  }
+
+  /**
+   * Helper class to update info schema.
+   *
+   * @author Jihan Chen
+   *
+   */
+  private static class UpdateInfoSchema {
+
+    /**
+     * Update information schema when new schema is created.
+     *
+     * @param schema
+     */
+    public static void atCreatingSchema(String schema) {
+      try {
+        Files.append(schema + SystemProperties.get("lineBreak"), schemata,
+            SystemProperties.getCharset());
+      } catch (IOException e) {
+        throw new Error(e.getMessage());
+      }
+    }
+
+    /**
+     * Update information schema when new table is created.
+     *
+     * @param schema
+     * @param table
+     * @param cols
+     */
+    public static void atCreatingTable(String schema, String table, List<Column> cols) {
+      try {
+        Constraint con;
+        StringBuilder sb = new StringBuilder();
+        Files.append(NamingUtils.join(schema, table, 0), tables, SystemProperties.getCharset());
+        for (Column col : cols) {
+          sb.append(Joiner.on(delimiter).join(schema, table, col.getName(), cols.indexOf(col) + 1));
+          con = col.getConstraint();
+          sb.append(delimiter);
+          if (con instanceof NoConstraint) {
+            sb.append(Joiner.on(delimiter).join("YES", ""));
+          } else if (con instanceof NotNull) {
+            sb.append(Joiner.on(delimiter).join("NO", ""));
+          } else if (con instanceof PrimaryKey) {
+            sb.append(Joiner.on(delimiter).join("NO", "PRI"));
+          }
+          sb.append(SystemProperties.get("lineBreak"));
+        }
+        Files.append(sb.toString(), columns, SystemProperties.getCharset());
+      } catch (IOException e) {
+        throw new Error(e.getMessage());
+      }
+
+    }
+
+    /**
+     * Update information schema when table is dropped.
+     *
+     * @param schema
+     * @param table
+     * @return
+     */
+    public static boolean atDroppingTable(String schema, String table) {
+      try {
+        String pattern = "^" + schema + SystemProperties.get("delimiter") + table;
+        return TblUtils.deleteLines(tables, Predicates.containsPattern(pattern))
+            && TblUtils.deleteLines(columns, Predicates.containsPattern(pattern));
+      } catch (IOException e) {
+        throw new Error(e.getMessage());
+      }
+    }
+
+    /**
+     * Update information schema when schema is deleted.
+     *
+     * @param schema
+     * @return
+     */
+    public static boolean atDeletingSchema(String schema) {
+      try {
+        String pattern = "^" + schema;
+        return TblUtils.deleteLines(schemata, Predicates.containsPattern(pattern))
+            && TblUtils.deleteLines(tables, Predicates.containsPattern(pattern))
+            && TblUtils.deleteLines(columns, Predicates.containsPattern(pattern));
+      } catch (IOException e) {
+        throw new Error(e.getMessage());
+      }
+    }
   }
 
 }

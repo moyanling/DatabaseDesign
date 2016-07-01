@@ -93,18 +93,23 @@ public class DatabaseDesign {
    * @param dbDesign
    */
   public static void optionAll(DatabaseDesign dbDesign) {
+    String lineBreak = SystemProperties.get("lineBreak");
+    String tab = SystemProperties.get("tab");
     StringBuilder sb = new StringBuilder();
-    sb.append("Supported commands: \n\n");
+    sb.append("Supported commands: " + lineBreak);
     for (Cmd cmd : Cmd.getCmdList()) {
-      sb.append("\t" + cmd.getName() + " \n\t\t- " + cmd.getDescription() + "\n\n");
+      sb.append(tab + cmd.getName() + " " + lineBreak + tab + tab + "- " + cmd.getDescription()
+          + lineBreak);
     }
-    sb.append("Supported Data Types: \n\n");
+    sb.append("Supported Data Types: " + lineBreak);
     for (DataType type : DataType.getDataTypeList()) {
-      sb.append("\t" + type.getName() + " \n\t\t- " + type.getDescription() + "\n\n");
+      sb.append(
+          tab + type.getName() + lineBreak + tab + tab + "- " + type.getDescription() + lineBreak);
     }
-    sb.append("Supported constraints: \n\n");
+    sb.append("Supported constraints: " + lineBreak);
     for (Constraint constraint : Constraint.getConstraintList()) {
-      sb.append("\t" + constraint.getName() + " \n\t\t- " + constraint.getDescription() + "\n\n");
+      sb.append(tab + constraint.getName() + lineBreak + tab + tab + "- "
+          + constraint.getDescription() + lineBreak);
     }
     sb.append(SystemProperties.get("usageInstruction"));
     View.newView(sb.toString());
