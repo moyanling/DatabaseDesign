@@ -101,17 +101,17 @@ public class DatabaseDesign {
       sb.append(tab + cmd.getName() + " " + lineBreak + tab + tab + "- " + cmd.getDescription()
           + lineBreak);
     }
-    sb.append("Supported Data Types: " + lineBreak);
+    sb.append(lineBreak + "Supported Data Types: " + lineBreak);
     for (DataType type : DataType.getDataTypeList()) {
       sb.append(
           tab + type.getName() + lineBreak + tab + tab + "- " + type.getDescription() + lineBreak);
     }
-    sb.append("Supported constraints: " + lineBreak);
+    sb.append(lineBreak + "Supported constraints: " + lineBreak);
     for (Constraint constraint : Constraint.getConstraintList()) {
       sb.append(tab + constraint.getName() + lineBreak + tab + tab + "- "
           + constraint.getDescription() + lineBreak);
     }
-    sb.append(SystemProperties.get("usageInstruction"));
+    sb.append(lineBreak + SystemProperties.get("usageInstruction"));
     View.newView(sb.toString());
   }
 
@@ -154,7 +154,7 @@ public class DatabaseDesign {
   public static void main(String[] args) {
     DatabaseDesign dbDesign = new DatabaseDesign();
     InfoSchema.init();
-    InfoSchema.validate();
+//    InfoSchema.validate();
     // ----------------------
     Options opts = new Options();
     CommandLineParser parser = new DefaultParser();

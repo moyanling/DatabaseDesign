@@ -1,4 +1,0 @@
-Information_Schema,SCHEMATA,SCHEMA_NAME,1,varchar(64),NO,
-Information_Schema,TABLES,TABLE_SCHEMA,1,varchar(64),NO,
-Information_Schema,TABLES,TABLE_NAME,2,varchar(64),NO,
-Information_Schema,TABLES,TABLE_ROWS,3,int,NO,

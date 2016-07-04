@@ -5,7 +5,9 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.mo39.fmbh.databasedesign.model.Constraint.PrimaryKey;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
+import org.mo39.fmbh.databasedesign.model.DBExceptions.DuplicatePrimaryKeyException;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.UnrecognizableConstraintException;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.UnrecognizableDataTypeException;
 import org.mo39.fmbh.databasedesign.utils.NamingUtils;
@@ -26,7 +28,16 @@ public class Column {
     this.constraint = constraint;
   }
 
+  /**
+   * Parse a string content which defines the columns for a table, i.e. the content in the
+   * parenthesis of a create table command.
+   * 
+   * @param content
+   * @return List<Column> containing several Column objects.
+   */
   public static List<Column> newColumnDefinition(String content) {
+    // only one primary key. count the number of primary key
+    int count = 0;
     ArrayList<Column> columns = Lists.newArrayList();
     try {
       for (String columnDef : content.split(",")) {
@@ -55,15 +66,19 @@ public class Column {
         if (constraint == null) {
           throw new UnrecognizableConstraintException("Unsupported constraint: " + constraintStr);
         }
+        if (constraint instanceof PrimaryKey) {
+          count++;
+          if (count > 1) {
+            throw new DuplicatePrimaryKeyException("More than one primary key is assigned.");
+          }
+        }
         columns.add(new Column(columnName, dataType, constraint));
       }
     } catch (Exception e) {
       DBExceptions.newError(e);
     }
     return columns;
-
   }
-
   public String getName() {
     return name;
   }

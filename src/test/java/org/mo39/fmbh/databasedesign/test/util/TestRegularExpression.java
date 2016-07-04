@@ -41,28 +41,24 @@ public class TestRegularExpression {
 
   @Test
   public void testSelectWithWhereClauseRegularExpression() {
-    String testString = "select class from table_name where id = 1;";
+    String testString = "select class from table_name where id=1;";
     String test = "select class from table_name ;";
 
-    String regex = "^SELECT\\s+(.*?)\\s+FROM\\s+(.*?)(\\s*?\\;$|\\s+WHERE\\s+(.*?[>=<].*?)\\s*?\\;$)";
+    String regex =
+        "^SELECT\\s+(.*?)\\s+FROM\\s+(.*?)(\\s*?|\\s+WHERE\\s+(.*?=.*?))\\;$";
     Pattern p = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
     Matcher matcher = p.matcher(testString);
     Assert.assertTrue(matcher.matches());
     Assert.assertEquals("class", matcher.group(1));
     Assert.assertEquals("table_name", matcher.group(2));
-    Assert.assertEquals("where id = 1;", matcher.group(3).trim());
+    Assert.assertEquals("where id=1", matcher.group(3).trim());
 
     matcher = p.matcher(test);
     Assert.assertTrue(matcher.matches());
     Assert.assertEquals("class", matcher.group(1));
     Assert.assertEquals("table_name", matcher.group(2));
-    Assert.assertEquals(";", matcher.group(3).trim());
+    Assert.assertEquals("", matcher.group(3).trim());
   }
-
-
-
-
-
 
 
 

@@ -3,6 +3,7 @@ package org.mo39.fmbh.databasedesign.executor;
 import java.io.IOException;
 import java.util.Set;
 
+import org.mo39.fmbh.databasedesign.framework.InfoSchema;
 import org.mo39.fmbh.databasedesign.framework.Status;
 import org.mo39.fmbh.databasedesign.framework.SystemProperties;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
@@ -34,7 +35,7 @@ public abstract class SchemaOperationExecutor {
     @Override
     @IsReadOnly
     public void execute() {
-      Set<String> schemaSet = FileUtils.getSchemas();
+      Set<String> schemaSet = FileUtils.getSchemaSet();
       String currentSchema = Status.getCurrentSchema();
       StringBuilder sb = new StringBuilder("Show Schemas: ");
       if (schemaSet.size() == 0) {
@@ -72,7 +73,7 @@ public abstract class SchemaOperationExecutor {
     public void execute() throws DBExceptions {
       String schema = NamingUtils.extractAndCheckName(Status.getCurrentCmdStr(), REGEX, 1);
       if (schema != null) {
-        Set<String> schemaSet = FileUtils.getSchemas();
+        Set<String> schemaSet = FileUtils.getSchemaSet();
         if (schemaSet.contains(schema)) {
           Status.setCurrentSchema(schema);
           endMessage = "Schema - '" + schema + "' is activated.";
@@ -107,11 +108,11 @@ public abstract class SchemaOperationExecutor {
       if (schema == null) {
         throw new BadUsageException();
       }
-      if (SystemProperties.get("infoSchema").equals(schema)) {
-        throw new BadUsageException(
-            SystemProperties.get("infoSchema") + " is resevered. Please use others instead.");
+      if (InfoSchema.getInfoSchema().equals(schema)) {
+        throw new BadUsageException("Schema - '" + InfoSchema.getInfoSchema()
+            + "' is resevered. Please use others instead.");
       }
-      if (FileUtils.getSchemas().contains(schema)) {
+      if (FileUtils.getSchemaSet().contains(schema)) {
         endMessage = "Schema - '" + schema + "' already exists.";
         return;
       }
@@ -151,7 +152,7 @@ public abstract class SchemaOperationExecutor {
       if (schema == null) {
         throw new BadUsageException();
       }
-      Set<String> schemaSet = FileUtils.getSchemas();
+      Set<String> schemaSet = FileUtils.getSchemaSet();
       if (schemaSet.contains(schema)) {
         if (FileUtils.deleteSchema(schema)) {
           if (schema.equals(Status.getCurrentSchema())) {

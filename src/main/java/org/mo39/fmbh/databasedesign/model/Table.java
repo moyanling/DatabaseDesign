@@ -6,7 +6,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.AddRecordException;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.ConstraintViolationException;
 import org.mo39.fmbh.databasedesign.utils.FileUtils;
@@ -14,12 +13,12 @@ import org.mo39.fmbh.databasedesign.utils.TblUtils;
 
 import com.google.common.collect.Lists;
 
-public class Table implements Iterable<byte[]> {
+public class Table implements Iterable<String> {
 
   private String schema = null;
   private String table = null;
   private List<Column> columns = null;
-  private List<byte[]> records = Lists.newArrayList();;
+  private List<String> records = Lists.newArrayList();
 
   private Table(String schema, String table, List<Column> columns) {
     this.schema = schema;
@@ -34,7 +33,17 @@ public class Table implements Iterable<byte[]> {
    * @return
    */
   public static Table init(String schema, String table) {
-    return new Table(schema, table, FileUtils.getColumns(schema, table));
+    return new Table(schema, table, FileUtils.getColumnList(schema, table));
+  }
+
+  /**
+   * Initiate a Row object using column definitions.
+   *
+   * @param columns
+   * @return
+   */
+  public static Table init(String schema, String table, List<Column> cols) {
+    return new Table(schema, table, cols);
   }
 
   /**
@@ -45,7 +54,6 @@ public class Table implements Iterable<byte[]> {
    */
   public void addRecord(String values) throws DBExceptions {
     String[] valueArray = values.split(",");
-    byte[] result = new byte[0];
     if (valueArray.length != columns.size()) {
       throw new AddRecordException(
           "Adding record: The number of values is not consistent with column definition.");
@@ -57,21 +65,22 @@ public class Table implements Iterable<byte[]> {
         throw new ConstraintViolationException(
             "Value: " + value + " does not observe datatype: " + col.getDataType().getArg());
       }
-      if (!col.getConstraint().impose(schema, table, col)) {
-        System.out.println("The constraint fails");
-        // TODO Uncomment me after constraint is implement.
-        // ConstraintViolationException("Value: " + value + " does not observe the constraint "
-        // + col.getConstraint().getName() + " for Column " + col.getName());
-      }
-      try {
-        byte[] bytes = (byte[]) DataType.class
-            .getMethod(col.getDataType().getParseToByteArray(), String.class).invoke(null, value);
-        result = ArrayUtils.addAll(result, bytes);
-      } catch (Exception e) {
-        DBExceptions.newError(e);
+      if (!col.getConstraint().impose(schema, table, col, value)) {
+        throw new ConstraintViolationException(
+            "Value: " + value + " does not observe the constraint " + col.getConstraint().getName()
+                + " for Column " + col.getName());
       }
     }
-    records.add(result);
+    records.add(values);
+  }
+
+  /**
+   * Return the number of records.
+   * 
+   * @return
+   */
+  public int size() {
+    return records.size();
   }
 
   /**
@@ -80,12 +89,13 @@ public class Table implements Iterable<byte[]> {
    *
    * @return
    */
-  public byte[] getRecord() {
+  public String getRecord() {
     return records.remove(0);
   }
 
   /**
    * Write all records to DB. Then all the records in this Table object is cleared.
+   * 
    * @throws IOException
    */
   public void writeToDB() throws IOException {
@@ -97,8 +107,8 @@ public class Table implements Iterable<byte[]> {
    *
    */
   @Override
-  public Iterator<byte[]> iterator() {
-    return new Iterator<byte[]>() {
+  public Iterator<String> iterator() {
+    return new Iterator<String>() {
 
       @Override
       public boolean hasNext() {
@@ -106,7 +116,7 @@ public class Table implements Iterable<byte[]> {
       }
 
       @Override
-      public byte[] next() {
+      public String next() {
         if (!hasNext()) {
           throw new NoSuchElementException();
         }

@@ -50,7 +50,7 @@ public interface Executable {
    *         naming conventions in {@link NamingUtils}.
    * @throws IOException
    */
-  public void execute() throws DBExceptions, IOException;
+  public abstract void execute() throws DBExceptions, IOException;
 
 
   /**

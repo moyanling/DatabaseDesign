@@ -10,6 +10,12 @@ import org.mo39.fmbh.databasedesign.model.DataType;
 public class TestDataType {
 
   @Test
+  public void testValues() {
+    Assert.assertArrayEquals(new byte[] {3, 89, 69, 83}, DataType.parseVarCharToByteArray("YES"));
+    Assert.assertArrayEquals(new byte[] {0}, DataType.parseVarCharToByteArray(""));
+  }
+
+  @Test
   public void testParseTo() throws Exception {
     Assert.assertEquals(1,
         Class.forName("java.lang.Integer").getMethod("parseInt", String.class).invoke(null, "1"));

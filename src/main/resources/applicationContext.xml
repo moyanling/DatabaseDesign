@@ -26,16 +26,48 @@
 		<entry key="welcome" value="${info.welcome}" />
 		<entry key="usageInstruction" value="${info.usageInstruction}" />
 		
-		<entry key="archiveRoot" value="${archive.root}" />
-		<entry key="infoSchema" value="${archive.infoSchema}" />
-		<entry key="schemata" value="${archive.schemata}" />
-		<entry key="tables" value="${archive.tables}" />
-		<entry key="columns" value="${archive.columns}" />
-		
 		<entry key="tab" value="${sys.table}"/>
 		<entry key="delimiter" value="${sys.delimiter}" />
 		<entry key="lineBreak" value="${sys.lineBreak}" />
 	</util:map>
+	
+	<bean id="infoSchema" class="org.mo39.fmbh.databasedesign.framework.InfoSchema">
+		<property name="archiveRoot" value="${archive.root}"/>
+		<property name="infoSchema" value="${archive.infoSchema}"/>
+		<property name="schemata" value="${archive.schemata}"/>
+		<property name="tables" value="${archive.tables}"/>
+		<property name="columns" value="${archive.columns}"/>		
+		<property name="createSchemata" value="${create.schemata}"/>
+		<property name="createTables" value="${create.tables}"/>
+		<property name="createColumns" value="${create.columns}"/>		
+		<property name="schemataValues">
+			<list>
+				<value>${schemata.value.1}</value>
+			</list>
+		</property>		
+		<property name="tablesValues">
+			<list>
+				<value>${tables.value.1}</value>
+				<value>${tables.value.2}</value>
+				<value>${tables.value.3}</value>
+			</list>
+		</property>
+		<property name="columnsValues">
+			<list>
+				<value>${columns.value.1}</value>
+				<value>${columns.value.2}</value>
+				<value>${columns.value.3}</value>
+				<value>${columns.value.4}</value>
+				<value>${columns.value.5}</value>
+				<value>${columns.value.6}</value>
+				<value>${columns.value.7}</value>
+				<value>${columns.value.8}</value>
+				<value>${columns.value.9}</value>
+				<value>${columns.value.10}</value>
+			</list>
+		</property>
+		
+	</bean>
 
 </beans>
 

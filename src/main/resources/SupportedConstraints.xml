@@ -25,7 +25,7 @@
 		<bean id="notNull" class="org.mo39.fmbh.databasedesign.model.Constraint$NotNull">
 			<property name="name" value="NOT NULL"/>
 			<property name="regx" value="^NOT\s+NULL$"/>
-			<property name="description" value="to indicate that NULL values are not permitted for a particular column." />
+			<property name="description" value="Indicate that NULL values are not permitted for a particular column." />
 		</bean>
 		
 		

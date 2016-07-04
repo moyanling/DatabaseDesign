@@ -47,7 +47,7 @@ public abstract class TableOperationExecutor {
     @IsReadOnly
     @RequiresActiveSchema
     public void execute() {
-      Set<String> tableSet = FileUtils.getTables(Status.getCurrentSchema());
+      Set<String> tableSet = FileUtils.getTableSet(Status.getCurrentSchema());
       StringBuilder sb = new StringBuilder("Show Tables: ");
       if (tableSet.size() == 0) {
         sb.append(lineBreak + tab + "None");
@@ -86,7 +86,7 @@ public abstract class TableOperationExecutor {
         throw new BadUsageException();
       }
       String schema = Status.getCurrentSchema();
-      Set<String> tableSet = FileUtils.getTables(schema);
+      Set<String> tableSet = FileUtils.getTableSet(schema);
       if (!tableSet.contains(table)) {
         throw new BadUsageException("The table does not exist in schema - '" + schema + "'.");
       }
@@ -132,7 +132,7 @@ public abstract class TableOperationExecutor {
       }
       columns = Column.newColumnDefinition(content);
       String schema = Status.getCurrentSchema();
-      if (FileUtils.getTables(schema).contains(table)) {
+      if (FileUtils.getTableSet(schema).contains(table)) {
         endMessage = "Table - '" + table + "' already exists.";
         return;
       }

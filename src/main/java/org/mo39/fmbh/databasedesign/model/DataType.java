@@ -24,6 +24,8 @@ public class DataType {
 
   private static List<DataType> supportedDataTypeList;
 
+  private static Pattern nullValue = Pattern.compile("NULL", Pattern.CASE_INSENSITIVE);
+
   /**
    * Check whether input string is a supported DataType and convert to the corresponding DataType.
    *
@@ -35,11 +37,26 @@ public class DataType {
       Pattern regx = Pattern.compile(type.regx, Pattern.CASE_INSENSITIVE);
       Matcher matcher = regx.matcher(arg);
       if (matcher.matches()) {
-        type.arg = arg;
-        return type;
+        DataType toRet = type.clone();
+        toRet.arg = arg;
+        return toRet;
       }
     }
     return null;
+  }
+
+  public DataType clone() {
+    DataType toRet = new DataType();
+    toRet.arg = arg;
+    toRet.name = name;
+    toRet.regx = regx;
+
+    toRet.description = description;
+    toRet.javaClass = javaClass;
+
+    toRet.parseToByteArray = parseToByteArray;
+    toRet.parseFromByteBuffer = parseFromByteBuffer;
+    return toRet;
   }
 
   /**
@@ -48,6 +65,11 @@ public class DataType {
    * @return
    */
   public static boolean checkDataType(Column col, String value) {
+    Pattern p = Pattern.compile("NULL", Pattern.CASE_INSENSITIVE);
+    Matcher m = p.matcher(value);
+    if (m.matches()) {
+      return true;
+    }
     DataType dt = col.getDataType();
     switch (dt.name) {
       case "VARCHAR":
@@ -68,6 +90,11 @@ public class DataType {
    * @return
    */
   public static final byte[] parseIntToByteArray(String arg) {
+    Preconditions.checkArgument(arg != null);
+    Matcher m = nullValue.matcher(arg);
+    if (m.matches()) {
+      return ByteBuffer.allocate(4).putInt(Integer.MIN_VALUE).array();
+    }
     return ByteBuffer.allocate(4).putInt(Integer.parseInt(arg)).array();
   }
 
@@ -78,7 +105,8 @@ public class DataType {
    * @return
    */
   public static final Integer parseIntFromByteBuffer(ByteBuffer bb) {
-    return bb.getInt();
+    int i = bb.getInt();
+    return i == Integer.MIN_VALUE ? null : i;
   }
 
   /**
@@ -88,6 +116,11 @@ public class DataType {
    * @return
    */
   public static final byte[] parseByteToByteArray(String arg) {
+    Preconditions.checkArgument(arg != null);
+    Matcher m = nullValue.matcher(arg);
+    if (m.matches()) {
+      return ByteBuffer.allocate(1).put(Byte.MIN_VALUE).array();
+    }
     return ByteBuffer.allocate(1).put(Byte.parseByte(arg)).array();
   }
 
@@ -98,7 +131,8 @@ public class DataType {
    * @return
    */
   public static final Byte parseByteFromByteBuffer(ByteBuffer bb) {
-    return bb.get();
+    byte b = bb.get();
+    return b == Byte.MIN_VALUE ? null : b;
   }
 
   /**
@@ -109,6 +143,11 @@ public class DataType {
    * @return
    */
   public static final byte[] parseVarCharToByteArray(String arg) {
+    Preconditions.checkArgument(arg != null);
+    Matcher m = nullValue.matcher(arg);
+    if (m.matches()) {
+      return new byte[] {0};
+    }
     byte[] bytes = arg.getBytes(SystemProperties.getCharset());
     byte len = (byte) bytes.length;
     int capacity = 1 + bytes.length;
@@ -126,6 +165,9 @@ public class DataType {
    */
   public static final String parseVarCharFromByteBuffer(ByteBuffer bb) {
     byte len = bb.get();
+    if (len == 0) {
+      return null;
+    }
     byte[] s = new byte[len];
     bb.get(s, 0, len);
     return new String(s, SystemProperties.getCharset());
@@ -138,6 +180,11 @@ public class DataType {
    * @return
    */
   public static final byte[] parseLongToByteArray(String arg) {
+    Preconditions.checkArgument(arg != null);
+    Matcher m = nullValue.matcher(arg);
+    if (m.matches()) {
+      return ByteBuffer.allocate(8).putLong(Long.MIN_VALUE).array();
+    }
     return ByteBuffer.allocate(8).putLong(Long.parseLong(arg)).array();
   }
 
@@ -148,7 +195,8 @@ public class DataType {
    * @return
    */
   public static final long parseLongFromByteBuffer(ByteBuffer bb) {
-    return bb.getLong();
+    long l = bb.getLong();
+    return l == Long.MIN_VALUE ? null : l;
   }
 
   public static List<DataType> getDataTypeList() {

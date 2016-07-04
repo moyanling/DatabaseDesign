@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.mo39.fmbh.databasedesign.utils.TblUtils;
+
 import com.google.common.base.Preconditions;
 
 /**
@@ -29,7 +31,7 @@ public abstract class Constraint {
    * @param col
    * @return {@code true} if the column observes the constraint, otherwise {@code false}
    */
-  public abstract boolean impose(String schema, String table, Column col);
+  public abstract boolean impose(String schema, String table, Column col, String value);
 
   /**
    * Check whether input string is a supported constraint. Does not support more than one
@@ -89,22 +91,44 @@ public abstract class Constraint {
     this.description = description;
   }
 
-  public static class PrimaryKey extends Constraint {
+  public byte[] toBytes(Column col) {
+    byte[] result = new byte[0];
+
+
+    return result;
+  }
+
+  /**
+   * Indicates that the specified column does not allow null value.
+   * 
+   * @author Jihan Chen
+   *
+   */
+  public static class NotNull extends Constraint {
 
     @Override
-    public boolean impose(String schema, String table, Column col) {
-      // TODO Auto-generated method stub
-      return false;
+    public boolean impose(String schema, String table, Column col, String value) {
+      Pattern p = Pattern.compile("NULL", Pattern.CASE_INSENSITIVE);
+      Matcher m = p.matcher(value);
+      if (m.matches()) {
+        return false;
+      }
+      return true;
     }
 
   }
 
-  public static class NotNull extends Constraint {
+  /**
+   * Indicates that the specified column is the primary key.
+   * 
+   * @author Jihan Chen
+   *
+   */
+  public static class PrimaryKey extends Constraint {
 
     @Override
-    public boolean impose(String schema, String table, Column col) {
-      // TODO Auto-generated method stub
-      return false;
+    public boolean impose(String schema, String table, Column col, String value) {
+      return TblUtils.checkPrimaryKey(schema, table, col, value);
     }
 
   }
@@ -118,7 +142,7 @@ public abstract class Constraint {
   public static class NoConstraint extends Constraint {
 
     @Override
-    public boolean impose(String schema, String table, Column col) {
+    public boolean impose(String schema, String table, Column col, String value) {
       return true;
     }
 

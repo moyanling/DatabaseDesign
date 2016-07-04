@@ -19,7 +19,7 @@
 		<bean id="byte" class="org.mo39.fmbh.databasedesign.model.DataType">
 			<property name="name" value="BYTE"/>
 			<property name="regx" value="BYTE"/>
-			<property name="description" value="A signed two’s compliment byte: range -128 to 127"/>
+			<property name="description" value="A signed two’s compliment byte: range -127 to 127"/>
 			<property name="javaClass" value="java.lang.Byte"/>
 			<property name="parseToByteArray" value="parseByteToByteArray"/>
 			<property name="parseFromByteBuffer" value="parseByteFromByteBuffer"/>
@@ -28,16 +28,16 @@
 		<bean id="int" class="org.mo39.fmbh.databasedesign.model.DataType">
 			<property name="name" value="INT"/>
 			<property name="regx" value="INT"/>
-			<property name="description" value="A signed two’s compliment integer: range -2147483648 to 2147483647" />
+			<property name="description" value="A signed two’s compliment integer: range -2147483647 to 2147483647" />
 			<property name="javaClass" value="java.lang.Integer"/>
 			<property name="parseToByteArray" value="parseIntToByteArray"/>
 			<property name="parseFromByteBuffer" value="parseIntFromByteBuffer"/>
 		</bean>
 		
 		<bean id="long" class="org.mo39.fmbh.databasedesign.model.DataType">
-			<property name="name" value="INT"/>
-			<property name="regx" value="INT"/>
-			<property name="description" value="A signed two’s compliment integer: range -2147483648 to 2147483647" />
+			<property name="name" value="LONG"/>
+			<property name="regx" value="LONG"/>
+			<property name="description" value="A signed two’s compliment long integer: range –2^63 + 1 to 2^63 – 1" />
 			<property name="javaClass" value="java.lang.Long"/>
 			<property name="parseToByteArray" value="parseLongToByteArray"/>
 			<property name="parseFromByteBuffer" value="parseLongFromByteBuffer"/>

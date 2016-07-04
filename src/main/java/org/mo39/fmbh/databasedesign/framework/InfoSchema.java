@@ -1,66 +1,66 @@
 package org.mo39.fmbh.databasedesign.framework;
 
 import static org.mo39.fmbh.databasedesign.utils.FileUtils.tblRef;
-import static org.mo39.fmbh.databasedesign.utils.NamingUtils.join;
 
-import java.io.BufferedWriter;
-import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
+import org.mo39.fmbh.databasedesign.model.Column;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.InvalidInformationSchemaException;
+import org.mo39.fmbh.databasedesign.model.Table;
 import org.mo39.fmbh.databasedesign.utils.FileUtils;
-
-import com.google.common.io.Files;
 
 /**
  * The system info schema related operation should be only invoked with utils. All invoking methods
  * would not check preconditions such as whether the file has already exists. These preconditions
- * should assured before doing updates to info schema. <br>
- * //TODO Kill the DELIMITER and LINE_BREAK.
- * Create column definition for information schema, other than plain string.
- *
+ * should assured before doing updates to info schema.
+ * 
  * @author Jihan Chen
  *
  */
-public abstract class InfoSchema {
+public class InfoSchema {
 
-  private static final String INFO_SCHEMA = SystemProperties.get("InfoSchema");
-  private static final String SCHEMATA = SystemProperties.get("schemata");
-  private static final String TABLES = SystemProperties.get("tables");
-  private static final String COLUMNS = SystemProperties.get("columns");
+  private static String archiveRoot;
+  private static String infoSchema;
+  private static String schemata;
+  private static String tables;
+  private static String columns;
 
+  private static String createSchemata;
+  private static String createTables;
+  private static String createColumns;
 
-  private static File schemata = tblRef(INFO_SCHEMA, SCHEMATA);
-  private static File tables = tblRef(INFO_SCHEMA, TABLES);
-  private static File columns = tblRef(INFO_SCHEMA, COLUMNS);
+  private static List<String> schemataValues;
+  private static List<String> tablesValues;
+  private static List<String> columnsValues;
 
   /**
    * Initiate the information schema. If all three tables already exist, return. Otherwise create
-   * three tables.
+   * three tblRef(infoSchema, tables).
    *
    */
-  protected static final void init() {
+  static void init() {
     if (exists()) {
       return;
     }
     try {
-      createSchemata();
-      createTables();
-      createColumns();
-    } catch (IOException e) {
+      createInformationTable(createSchemata, infoSchema, schemata, schemataValues);
+      createInformationTable(createTables, infoSchema, tables, tablesValues);
+      createInformationTable(createColumns, infoSchema, columns, columnsValues);
+    } catch (Exception e) {
       DBExceptions.newError(e);
     }
   }
 
   /**
-   * Validate SCHEMATA and TABLES.
+   * Validate schemata and tables.
    *
    */
-  protected static final void validate() {
+  static void validate() {
     String message;
     if (FileUtils.validateSchemas()) {
-      for (String schema : FileUtils.getSchemas()) {
+      for (String schema : FileUtils.getSchemaSet()) {
         if (!FileUtils.validateTables(schema)) {
           message = "Invalid table in schema - '" + schema + "'.";
           break;
@@ -68,7 +68,7 @@ public abstract class InfoSchema {
       }
       return;
     } else {
-      message = "Invalid SCHEMATA.";
+      message = "Invalid schemata.";
     }
     throw new InvalidInformationSchemaException(message);
   }
@@ -78,8 +78,9 @@ public abstract class InfoSchema {
    *
    * @return
    */
-  protected static final boolean exists() {
-    if (schemata.exists() && tables.exists() && columns.exists()) {
+  static boolean exists() {
+    if (tblRef(infoSchema, schemata).exists() && tblRef(infoSchema, tables).exists()
+        && tblRef(infoSchema, columns).exists()) {
       return true;
     } else {
       clear();
@@ -91,16 +92,16 @@ public abstract class InfoSchema {
    * Clear all three tables in information_schema;
    *
    */
-  protected static final void clear() {
+  static void clear() {
     try {
-      if (schemata.exists()) {
-        java.nio.file.Files.delete(schemata.toPath());
+      if (tblRef(infoSchema, schemata).exists()) {
+        java.nio.file.Files.delete(tblRef(infoSchema, schemata).toPath());
       }
-      if (tables.exists()) {
-        java.nio.file.Files.delete(tables.toPath());
+      if (tblRef(infoSchema, tables).exists()) {
+        java.nio.file.Files.delete(tblRef(infoSchema, tables).toPath());
       }
-      if (columns.exists()) {
-        java.nio.file.Files.delete(columns.toPath());
+      if (tblRef(infoSchema, columns).exists()) {
+        java.nio.file.Files.delete(tblRef(infoSchema, columns).toPath());
       }
     } catch (Exception e) {
       DBExceptions.newError(e);
@@ -108,55 +109,103 @@ public abstract class InfoSchema {
   }
 
   /**
-   * SCHEMATA
-   * +-------------+
-   * | SCHEMA_NAME |
-   * +-------------+
-   *
+   * Create SCHEMATA, TABLES, and COLUMNS table in INFORMATION_SCHEMA.
+   * 
    * @throws IOException
+   * @throws DBExceptions
    */
-  private static final void createSchemata() throws IOException {
-    schemata.createNewFile();
-    BufferedWriter out = Files.newWriter(schemata, SystemProperties.getCharset());
-    out.write(join(INFO_SCHEMA));
-    out.close();
+  private static void createInformationTable(String create, String schema, String table,
+      List<String> values) throws IOException, DBExceptions {
+    List<Column> cols = Column.newColumnDefinition(create);
+    tblRef(schema, table).createNewFile();
+    for (Column col : cols) {
+      FileUtils.ndxRef(schema, table, col.getName()).createNewFile();
+    }
+    Table t = Table.init(schema, table, cols);
+    for (String arg : values) {
+      t.addRecord(arg);
+    }
+    t.writeToDB();
   }
 
-  /**
-   * TABLES
-   * +--------------+------------+------------+
-   * | TABLE_SCHEMA | TABLE_NAME | TABLE_ROWS |
-   * +--------------+------------+------------+
-   *
-   * @throws IOException
-   */
-  private static final void createTables() throws IOException {
-    tables.createNewFile();
-    BufferedWriter out = Files.newWriter(tables, SystemProperties.getCharset());
-    out.write(join(INFO_SCHEMA, SCHEMATA, 1));
-    out.write(join(INFO_SCHEMA, TABLES, 3));
-    out.write(join(INFO_SCHEMA, COLUMNS, 4));
-    out.close();
+  public static String getArchiveRoot() {
+    return archiveRoot;
   }
 
-  /**
-   * COLUMNS
-   * +--------------+------------+-------------+-------------+-------------+------------+
-   * | TABLE_SCHEMA | TABLE_NAME | COLUMN NAME | COLUMN_TYPE | IS_NULLABLE | COLUMN_KEY |
-   * +--------------+------------+-------------+-------------+-------------+------------+
-   *
-   * @throws IOException
-   */
-  private static final void createColumns() throws IOException {
-    columns.createNewFile();
-    BufferedWriter out = Files.newWriter(columns, SystemProperties.getCharset());
-    out.write(join(INFO_SCHEMA, SCHEMATA, "SCHEMA_NAME", "varchar(64)", "NO", ""));
-    out.write(join(INFO_SCHEMA, TABLES, "TABLE_SCHEMA", "varchar(64)", "NO", ""));
-    out.write(join(INFO_SCHEMA, TABLES, "TABLE_NAME", "varchar(64)", "NO", ""));
-    out.write(join(INFO_SCHEMA, TABLES, "TABLE_ROWS", "int", "NO", ""));
-    out.close();
+  public void setArchiveRoot(String archiveRoot) {
+    InfoSchema.archiveRoot = archiveRoot;
   }
 
+  public static String getInfoSchema() {
+    return infoSchema;
+  }
 
+  public void setInfoSchema(String infoSchema) {
+    InfoSchema.infoSchema = infoSchema;
+  }
+
+  public static String getSchemata() {
+    return schemata;
+  }
+
+  public void setSchemata(String schemata) {
+    InfoSchema.schemata = schemata;
+  }
+
+  public static String getTables() {
+    return tables;
+  }
+
+  public void setTables(String tables) {
+    InfoSchema.tables = tables;
+  }
+
+  public static String getColumns() {
+    return columns;
+  }
+
+  public void setColumns(String columns) {
+    InfoSchema.columns = columns;
+  }
+
+  public void setCreateSchemata(String createSchemata) {
+    InfoSchema.createSchemata = createSchemata;
+  }
+
+  public void setCreateTables(String createTables) {
+    InfoSchema.createTables = createTables;
+  }
+
+  public void setCreateColumns(String createColumns) {
+    InfoSchema.createColumns = createColumns;
+  }
+
+  public void setSchemataValues(List<String> schemataValues) {
+    InfoSchema.schemataValues = schemataValues;
+  }
+
+  public void setTablesValues(List<String> tablesValues) {
+    InfoSchema.tablesValues = tablesValues;
+  }
+
+  public void setColumnsValues(List<String> columnsValues) {
+    InfoSchema.columnsValues = columnsValues;
+  }
+
+  public static void main(String[] args) {
+    new DatabaseDesign();
+    InfoSchema.init();
+    // System.out.println(createColumns);
+    // System.out.println();
+    // List<Column> cols = Column.newColumnDefinition(createColumns);
+    // System.out.println();
+    // System.out.println();
+    // for (Column col : cols) {
+    // System.out.println(col.getName());
+    // System.out.println(col.getConstraint().getName());
+    // System.out.println(col.getDataType().getArg());
+    // System.out.println();
+    // }
+  }
 
 }

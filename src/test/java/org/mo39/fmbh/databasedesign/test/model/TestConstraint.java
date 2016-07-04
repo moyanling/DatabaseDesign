@@ -21,7 +21,13 @@ public class TestConstraint {
     Constraint primary = Constraint.supports("primary key");
     assertEquals(PrimaryKey.class, primary.getClass());
     assertTrue(Constraint.class.isAssignableFrom(primary.getClass()));
-
+  }
+  
+  @Test
+  public void testArrayIndex() {
+    String[] x = new String[] {"1", "2", "3"};
+    assertEquals("2", x[x.length-2]);
+    assertEquals("3", x[x.length-1]);
   }
 
 }

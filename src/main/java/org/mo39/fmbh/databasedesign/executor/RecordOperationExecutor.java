@@ -1,7 +1,7 @@
 package org.mo39.fmbh.databasedesign.executor;
 
 import java.io.IOException;
-import java.util.Set;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -54,9 +54,9 @@ public abstract class RecordOperationExecutor {
 
     private String endMessage;
     private String lineBreak = SystemProperties.get("lineBreak");
-    private static Pattern regex = Pattern.compile(
-        "^SELECT\\s+(.*?)\\s+FROM\\s+(.*?)(\\s*?\\;$|\\s+WHERE\\s+(.*?[>=<].*?)\\s*?\\;$)",
-        Pattern.CASE_INSENSITIVE);
+    private static Pattern regex =
+        Pattern.compile("^SELECT\\s+(.*?)\\s+FROM\\s+(.*?)(\\s*?|\\s+WHERE\\s+(.*?=.*?))\\;$",
+            Pattern.CASE_INSENSITIVE);
 
     @Override
     public String getView() {
@@ -86,8 +86,12 @@ public abstract class RecordOperationExecutor {
       }
       // ----------------------
       String whereClause = m.group(3).trim();
-      // ----------------------
-      Set<Object> resultSet = TblUtils.selectFromDB(Status.getCurrentSchema(), table, whereClause);
+      List<Object> resultSet = null;
+      try {
+        resultSet = TblUtils.selectFromDB(Status.getCurrentSchema(), table, beanClass, whereClause);
+      } catch (IOException e) {
+        DBExceptions.newError(e);
+      }
       StringBuilder sb = new StringBuilder("Result: " + lineBreak);
       for (Object result : resultSet) {
         sb.append(SystemProperties.get("tab") + BeanUtils.beanToString(beanClass.cast(result))

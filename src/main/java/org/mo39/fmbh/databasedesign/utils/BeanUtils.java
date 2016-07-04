@@ -27,9 +27,9 @@ public abstract class BeanUtils {
    * @param columns
    * @return
    */
-  public static final <T> T parse(Class<T> beanClass, List<Column> columns, ByteBuffer record) {
+  public static final Object parse(Class<?> beanClass, List<Column> columns, ByteBuffer record) {
     try {
-      T toRet = beanClass.newInstance();
+      Object toRet = beanClass.newInstance();
       for (Column col : columns) {
         String methodName = "set" + WordUtils.capitalize(col.getName());
         Method m = findMethod(beanClass, methodName, col.getDataType().getJavaClass());
