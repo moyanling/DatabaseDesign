@@ -13,6 +13,7 @@ import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.ClassNotFound;
 import org.mo39.fmbh.databasedesign.model.Table;
 import org.mo39.fmbh.databasedesign.utils.BeanUtils;
+import org.mo39.fmbh.databasedesign.utils.FileUtils;
 import org.mo39.fmbh.databasedesign.utils.NamingUtils;
 import org.mo39.fmbh.databasedesign.utils.TblUtils;
 
@@ -33,17 +34,21 @@ public abstract class RecordOperationExecutor {
     @RequiresActiveSchema
     public void execute() throws DBExceptions, IOException {
       String cmd = Status.getCurrentCmdStr();
+      String schema = Status.getCurrentSchema();
       Pattern p = Pattern.compile(REGEX, Pattern.CASE_INSENSITIVE);
       Matcher matcher = p.matcher(cmd);
       if (!matcher.matches()) {
-        throw new BadUsageException();
+        throw new BadUsageException("Bad insertion command");
       }
       String table = matcher.group(1);
       String values = matcher.group(2);
       if (!NamingUtils.checkNamingConventions(table)) {
         throw new BadUsageException("Bad table name");
       }
-      Table t = Table.init(Status.getCurrentSchema(), table);
+      if (!FileUtils.getTableSet(schema).contains(table)) {
+        throw new BadUsageException("Table not found in current schema");
+      }
+      Table t = Table.init(schema, table);
       t.addRecord(values);
       t.writeToDB();
       endMessage = "Insertion done.";
@@ -77,7 +82,7 @@ public abstract class RecordOperationExecutor {
       try {
         beanClass = Class.forName(className);
       } catch (ClassNotFoundException e) {
-        throw new ClassNotFound(e);
+        throw new ClassNotFound(e.getMessage() + " is not Found.");
       }
       // ----------------------
       String table = m.group(2);
@@ -97,7 +102,7 @@ public abstract class RecordOperationExecutor {
         sb.append(SystemProperties.get("tab") + BeanUtils.beanToString(beanClass.cast(result))
             + lineBreak);
       }
-      endMessage = sb.append(lineBreak).toString();
+      endMessage = sb.substring(0, sb.length() - 1);
     }
 
 

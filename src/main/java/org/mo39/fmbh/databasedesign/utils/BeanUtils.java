@@ -77,7 +77,7 @@ public abstract class BeanUtils {
    */
   public static final <T> String beanToString(T t) {
 
-    Pattern pattern = Pattern.compile("get([a-zA-Z]*?)");
+    Pattern pattern = Pattern.compile("get(.*)");
     StringBuilder sb = new StringBuilder(t.getClass().getSimpleName() + ": {");
     List<Method> methods = Arrays.asList(t.getClass().getMethods());
     try {

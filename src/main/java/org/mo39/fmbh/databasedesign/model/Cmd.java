@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.mo39.fmbh.databasedesign.framework.DatabaseDesign;
-
 import com.google.common.base.Preconditions;
 
 /**
@@ -27,11 +25,11 @@ public class Cmd {
   private static List<Cmd> supportedCmdList;
 
   /**
-   * Check whether input string is a supported Cmd. If returns true, {@link DatabaseDesign#runCmd()}
-   * can be called.
+   * A static factory method that checks whether input string is a supported Cmd.
    *
    * @param arg
-   * @return Returns true if supports. Otherwise false.
+   * @return returns {@code null} if not supported. returns corresponding Cmd object if supported.
+   *         In this process, no new Cmd object is created.
    */
   public static Cmd supports(String arg) {
     Preconditions.checkArgument(arg != null);

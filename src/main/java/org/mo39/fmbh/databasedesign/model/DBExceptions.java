@@ -58,7 +58,7 @@ public class DBExceptions extends Exception {
 
   /**
    * Indicates that there are more than one primary assigned when creating table.
-   * 
+   *
    * @author Jihan Chen
    *
    */
@@ -90,7 +90,7 @@ public class DBExceptions extends Exception {
 
   /**
    * Indicates that the column name in the where clause is not found in DB.
-   * 
+   *
    * @author Jihan Chen
    *
    */
@@ -184,8 +184,8 @@ public class DBExceptions extends Exception {
   public static class ClassNotFound extends DBExceptions {
     private static final long serialVersionUID = 1L;
 
-    public ClassNotFound(ClassNotFoundException e) {
-      super(e.getMessage());
+    public ClassNotFound(String string) {
+      super(string);
     }
   }
 

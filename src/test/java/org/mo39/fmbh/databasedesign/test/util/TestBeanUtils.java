@@ -43,15 +43,4 @@ public class TestBeanUtils {
     t2.setDescription("HelloWorld");
     Assert.assertEquals("TestEntity: {id=39, description=HelloWorld} ", BeanUtils.beanToString(t2));
   }
-
-  @Test
-  public void testParse() {
-//    Table t = Table.init(Column.newColumnDefinition("id int, description varchar(20)"));
-//    t.addRecord("39, Hello world");
-//    TestEntity t1 =
-//        BeanUtils.parse(TestEntity.class, t.getColumns(), ByteBuffer.wrap(t.getRecord()));
-//    Assert.assertEquals(39, t1.getId());
-//    Assert.assertEquals("Hello world", t1.getDescription());
-  }
-
 }

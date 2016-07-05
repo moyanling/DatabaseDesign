@@ -81,7 +81,7 @@ public abstract class SchemaOperationExecutor {
           endMessage = "Schema - '" + schema + "' is not found in the archive.";
         }
       } else {
-        throw new BadUsageException();
+        throw new BadUsageException("Bad schema name.");
       }
     }
 

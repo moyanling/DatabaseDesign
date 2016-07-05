@@ -34,7 +34,7 @@ public abstract class Constraint {
   public abstract boolean impose(String schema, String table, Column col, String value);
 
   /**
-   * Check whether input string is a supported constraint. Does not support more than one
+   * A static factory method that checks whether input string is a supported constraint. Does not support more than one
    * constraint, i.e. Constraint#supports("PRIMARY KEY NOT NULL") returns false.
    *
    * @param arg
@@ -91,16 +91,9 @@ public abstract class Constraint {
     this.description = description;
   }
 
-  public byte[] toBytes(Column col) {
-    byte[] result = new byte[0];
-
-
-    return result;
-  }
-
   /**
    * Indicates that the specified column does not allow null value.
-   * 
+   *
    * @author Jihan Chen
    *
    */
@@ -120,7 +113,7 @@ public abstract class Constraint {
 
   /**
    * Indicates that the specified column is the primary key.
-   * 
+   *
    * @author Jihan Chen
    *
    */
@@ -135,7 +128,7 @@ public abstract class Constraint {
 
   /**
    * Indicates that no constraint is specified for the column.
-   * 
+   *
    * @author Jihan Chen
    *
    */

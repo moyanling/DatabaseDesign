@@ -15,7 +15,7 @@ import org.mo39.fmbh.databasedesign.utils.FileUtils;
  * The system info schema related operation should be only invoked with utils. All invoking methods
  * would not check preconditions such as whether the file has already exists. These preconditions
  * should assured before doing updates to info schema.
- * 
+ *
  * @author Jihan Chen
  *
  */
@@ -110,7 +110,7 @@ public class InfoSchema {
 
   /**
    * Create SCHEMATA, TABLES, and COLUMNS table in INFORMATION_SCHEMA.
-   * 
+   *
    * @throws IOException
    * @throws DBExceptions
    */
@@ -195,6 +195,7 @@ public class InfoSchema {
   public static void main(String[] args) {
     new DatabaseDesign();
     InfoSchema.init();
+    InfoSchema.validate();
     // System.out.println(createColumns);
     // System.out.println();
     // List<Column> cols = Column.newColumnDefinition(createColumns);

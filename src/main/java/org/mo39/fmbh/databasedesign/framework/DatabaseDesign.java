@@ -18,7 +18,6 @@ import org.mo39.fmbh.databasedesign.framework.View.Viewable;
 import org.mo39.fmbh.databasedesign.model.Cmd;
 import org.mo39.fmbh.databasedesign.model.Constraint;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
-import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.model.DataType;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -50,8 +49,8 @@ public class DatabaseDesign {
    * &emsp;- pre-execution check<br>
    * &emsp;- view result according to Viewable interface (if implemented) right after the execution
    * finishes<br>
-   * &emsp;- catch certain execeptions, display the message and consider the execution a failure (in
-   * which case the Viewable result will not be displayed).<br>
+   * &emsp;- catch certain DBExceptions, display the message and consider the execution a failure
+   * (in which case the Viewable result will not be displayed).<br>
    *
    */
   public void runCmd(Cmd cmd) {
@@ -73,12 +72,12 @@ public class DatabaseDesign {
       }
     } catch (InvocationTargetException e) {
       Throwable ex;
-      if ((ex = e.getCause()) instanceof BadUsageException) {
+      if (DBExceptions.class.isAssignableFrom((ex = e.getCause()).getClass())) {
         String message = ex.getMessage();
         if (message == null) {
           message = "";
         }
-        View.newView("Bad usage for '" + cmd.getName() + "'. " + message);
+        View.newView(message);
       }
     } catch (Exception e) {
       DBExceptions.newError(e);
@@ -154,7 +153,7 @@ public class DatabaseDesign {
   public static void main(String[] args) {
     DatabaseDesign dbDesign = new DatabaseDesign();
     InfoSchema.init();
-//    InfoSchema.validate();
+    // InfoSchema.validate();
     // ----------------------
     Options opts = new Options();
     CommandLineParser parser = new DefaultParser();

@@ -27,9 +27,11 @@ public class DataType {
   private static Pattern nullValue = Pattern.compile("NULL", Pattern.CASE_INSENSITIVE);
 
   /**
-   * Check whether input string is a supported DataType and convert to the corresponding DataType.
+   * A static factory method that checks whether input string is a supported DataType and convert to
+   * the corresponding DataType.
    *
-   * @return returns {@code null} if not supported. returns corresponding DataType if supported.
+   * @return returns {@code null} if not supported. returns corresponding new DataType Object if
+   *         supported.
    */
   public static DataType supports(String arg) {
     Preconditions.checkArgument(arg != null);
@@ -45,6 +47,7 @@ public class DataType {
     return null;
   }
 
+  @Override
   public DataType clone() {
     DataType toRet = new DataType();
     toRet.arg = arg;
@@ -187,16 +190,6 @@ public class DataType {
       return ByteBuffer.allocate(8).putLong(Long.MIN_VALUE).array();
     }
     return ByteBuffer.allocate(8).putLong(Long.parseLong(arg)).array();
-  }
-  
-  /**
-   * Skip reading the next varchar.
-   * 
-   * @param bb
-   */
-  public static void skipVarChar(ByteBuffer bb) {
-    byte len = bb.get();
-    bb.position(bb.position() + len);
   }
 
   /**

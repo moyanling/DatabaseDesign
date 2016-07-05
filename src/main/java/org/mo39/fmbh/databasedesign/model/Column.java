@@ -1,6 +1,5 @@
 package org.mo39.fmbh.databasedesign.model;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -24,7 +23,7 @@ public class Column implements Comparable<Column> {
 
   private static final String COLUMN_REGX = "^(.*?)\\s+(.*?)(\\s*?$|\\s+(.*?)\\s*?$)";
 
-  private Column(String name, DataType dataType, Constraint constraint, int ordinalPosi) {
+  public Column(String name, DataType dataType, Constraint constraint, int ordinalPosi) {
     this.name = name;
     this.dataType = dataType;
     this.constraint = constraint;
@@ -34,7 +33,7 @@ public class Column implements Comparable<Column> {
   /**
    * Parse a string content which defines the columns for a table, i.e. the content in the
    * parenthesis of a create table command.
-   * 
+   *
    * @param content
    * @return List<Column> containing several Column objects.
    */
@@ -84,37 +83,6 @@ public class Column implements Comparable<Column> {
       DBExceptions.newError(e);
     }
     return columns;
-  }
-
-  public byte[] toBytes() {
-    // TODO
-
-    return null;
-  }
-
-  public static Column valueOf(ByteBuffer bb) {
-    Column col = null;
-    DataType.skipVarChar(bb);// Skip schema name
-    DataType.skipVarChar(bb);// Skip table name
-    String columnName = DataType.parseVarCharFromByteBuffer(bb);
-    int ordinalPosi = DataType.parseIntFromByteBuffer(bb);
-    String dataTypeArg = DataType.parseVarCharFromByteBuffer(bb);
-    String notNullArg = DataType.parseVarCharFromByteBuffer(bb);
-    String primaryArg = DataType.parseVarCharFromByteBuffer(bb);
-    Constraint con = null;
-    if (notNullArg == null && primaryArg == null) {
-      con = Constraint.supports("");
-    } else if (notNullArg == null && primaryArg.equals("YES")) {
-      con = Constraint.supports("PRIMARY KEY");
-    } else if (notNullArg.equals("YES") && primaryArg == null) {
-      con = Constraint.supports("NOT NULL");
-    } else {
-      DBExceptions.newError("No constraint is found");
-    }
-
-    // TODO
-    return null;
-
   }
 
   @Override

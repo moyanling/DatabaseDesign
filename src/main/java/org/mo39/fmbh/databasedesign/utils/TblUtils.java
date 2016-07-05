@@ -4,10 +4,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
-import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -15,7 +13,6 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.mo39.fmbh.databasedesign.framework.DatabaseDesign;
-import org.mo39.fmbh.databasedesign.framework.InfoSchema;
 import org.mo39.fmbh.databasedesign.model.Column;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.ColumnNameNotFoundException;
@@ -23,53 +20,65 @@ import org.mo39.fmbh.databasedesign.model.DataType;
 import org.mo39.fmbh.databasedesign.model.Table;
 
 import com.google.common.collect.Lists;
+import com.google.common.io.ByteSink;
+import com.google.common.io.FileWriteMode;
+import com.google.common.io.Files;
 
 public abstract class TblUtils {
 
+  /**
+   * Parse the String form record into byte array and append the bytes to the end of the tbl file.
+   *
+   * @param t
+   * @param schema
+   * @param table
+   * @throws IOException
+   */
   public static void appendRecordsToDB(Table t, String schema, String table) throws IOException {
     File tbl = FileUtils.tblRef(schema, table);
-    OutputStream out = Files.newOutputStream(tbl.toPath(), StandardOpenOption.APPEND);
+    ByteSink out = Files.asByteSink(tbl, FileWriteMode.APPEND);
     // Reusable references
     Column col;
     String value;
     String[] valueArray;
-    byte[] bytes;
-    byte[] result = new byte[0];
     // ----------------------
     try {
       for (String record : t) {
         valueArray = record.split(",");
+        /**
+         * When a new record is appended to DB, it is separated into several value. Each value
+         * matches a Column object. When each value is parsed to byte array and written to DB, the
+         * corrsponding ndx file for this column will be updated.
+         */
         for (int i = 0; i < valueArray.length; i++) {
           value = valueArray[i].trim();
           col = t.getColumns().get(i);
-          // ----------------------
+          // parse the value for this column and write the value to DB
           Method method =
               DataType.class.getMethod(col.getDataType().getParseToByteArray(), String.class);
-          bytes = (byte[]) method.invoke(null, value);
-          result = ArrayUtils.addAll(result, bytes);
+          out.write((byte[]) method.invoke(null, value));
           // ----------------------
-          NdxUtils.updateIndexAtAppendingRecord(schema, table, col, value,
+          NdxUtils.updateIndexAtAppendingColumn(schema, table, col, value,
               (int) FileUtils.tblRef(schema, table).length());
         }
-        out.write(result);
-        result = new byte[0];// Clear the result byte array for next loop
       }
     } catch (Exception e) {
       DBExceptions.newError(e);
-    }
-    // Update INFORMATION_SCHEMA if the current schema is not INFORMATION_SCHEMA.
-    if (!schema.equals(InfoSchema.getInfoSchema())) {
-      // TODO records inserted. need to update information schema.
     }
   }
 
   /**
    * Rewrite a file using the new byte array. It aims at modifying the content of a file.
-   * 
+   *
+   * <p>
+   * Use {@link com.google.common.io.Files.write()} instead, which helps to overwrite a file using a
+   * byte array and shares the same params as well.
+   *
    * @param file
    * @param newContent
    * @throws IOException
    */
+  @Deprecated
   public static void rewrite(File file, byte[] newContent) throws IOException {
     checkArgument(file != null && newContent != null);
     if (!file.isFile()) {
@@ -80,7 +89,7 @@ public abstract class TblUtils {
     }
     File tempFile = new File(file.getAbsolutePath() + ".tmp");
     tempFile.createNewFile();
-    Files.write(tempFile.toPath(), newContent, StandardOpenOption.APPEND);
+    java.nio.file.Files.write(tempFile.toPath(), newContent, StandardOpenOption.APPEND);
     if (!tempFile.renameTo(file)) {
       throw new Error("Could not rename file");
     }
@@ -88,7 +97,7 @@ public abstract class TblUtils {
 
   /**
    * Select records from DB and form the record into a bean class using {@link BeanUtils}.
-   * 
+   *
    * @param schema
    * @param table
    * @param whereClause
@@ -101,7 +110,7 @@ public abstract class TblUtils {
       String whereClause) throws DBExceptions, IOException {
     checkArgument(schema != null && table != null && beanClass != null);
     // ----------------------
-    byte[] fileContent = Files.readAllBytes(FileUtils.tblRef(schema, table).toPath());
+    byte[] fileContent = Files.toByteArray(FileUtils.tblRef(schema, table));
     ByteBuffer bb = ByteBuffer.wrap(fileContent);
     List<Object> toRet = Lists.newArrayList();
     List<Column> cols = FileUtils.getColumnList(schema, table);
@@ -148,8 +157,8 @@ public abstract class TblUtils {
   }
 
   /**
-   * Check if there's no duplicate value for a primary key.
-   * 
+   * Check if there's no duplicate value for a primary key.//TODO does not work. cannot find Ndx.
+   *
    * @param schema
    * @param table
    * @param col
@@ -171,8 +180,9 @@ public abstract class TblUtils {
   private static class NdxUtils {
 
     /**
-     * Update the ndx file when new record is appended to DB.
-     * 
+     * When a column of the record is written to DB, call this method to upate the corresponding ndx
+     * file for this column.
+     *
      * @param schema
      * @param table
      * @param col
@@ -180,13 +190,14 @@ public abstract class TblUtils {
      * @param position
      * @throws Exception
      */
-    public static void updateIndexAtAppendingRecord(String schema, String table, Column col,
+    public static void updateIndexAtAppendingColumn(String schema, String table, Column col,
         String value, int position) throws Exception {
       File file = FileUtils.ndxRef(schema, table, col.getName());
       List<Ndx> ndxList = getNdxList(schema, table, col);
       Ndx ndx = findNdx(col, value, ndxList);
       // ----------------------
       if (ndx == null) {
+        System.out.println("No Ndx is found");
         // If no position is found, append the new one to the ndx list.
         Ndx newNdx = new Ndx(col, value, position);
         ndxList.add(newNdx);
@@ -202,12 +213,12 @@ public abstract class TblUtils {
         ndxBytes = n.parseToBytes();
         newContent = ArrayUtils.addAll(newContent, ndxBytes);
       }
-      rewrite(file, newContent);
+      Files.write(newContent, file);
     }
 
     /**
      * Convert certain ndx file into a List containing Ndx objects.
-     * 
+     *
      * @param schema
      * @param table
      * @param col
@@ -217,7 +228,7 @@ public abstract class TblUtils {
     public static List<Ndx> getNdxList(String schema, String table, Column col) throws Exception {
       // Read in all bytes
       File file = FileUtils.ndxRef(schema, table, col.getName());
-      byte[] fileContent = Files.readAllBytes(file.toPath());
+      byte[] fileContent = Files.toByteArray(file);
       // Change to Ndx Object
       List<Ndx> ndxList = Lists.newArrayList();
       ByteBuffer bb = ByteBuffer.wrap(fileContent);
@@ -228,8 +239,8 @@ public abstract class TblUtils {
     }
 
     /**
-     * 
-     * 
+     *
+     *
      * @param col
      * @param value
      * @param ndxList
@@ -243,7 +254,7 @@ public abstract class TblUtils {
           DataType.class.getMethod(col.getDataType().getParseFromByteBuffer(), ByteBuffer.class)
               .invoke(null, ByteBuffer.wrap(byteArray));
       for (Ndx ndx : ndxList) {
-        if (ndx.value == null ? value == dataTypeValue : value.equals(dataTypeValue)) {
+        if (ndx.value == null ? dataTypeValue == null : value.equals(dataTypeValue)) {
           return ndx;
         }
       }
@@ -251,8 +262,12 @@ public abstract class TblUtils {
     }
 
     /**
-     * Class presentation for the value indexes(positions) in response to it's column.
-     * 
+     * Class presentation for the value indexes(positions) pairs in ndx file for a certain column.
+     * <p>
+     * Since NdxUtils is a private class, this Ndx class is not accessable from outside, so it's
+     * variable member modifiers are public for convenience. Take care of that when using this
+     * class.
+     *
      * @author Jihan Chen
      *
      */
@@ -278,14 +293,14 @@ public abstract class TblUtils {
             DataType.class.getMethod(col.getDataType().getParseFromByteBuffer(), ByteBuffer.class)
                 .invoke(null, ByteBuffer.wrap(byteArray));
         this.value = dataTypeValue;
-        this.num = 1;
-        this.positions = Lists.newArrayList(posi);
+        num = 1;
+        positions = Lists.newArrayList(posi);
         this.col = col;
       }
 
       /**
        * parse the byte array to create a Ndx Object
-       * 
+       *
        * @param bb
        * @param col
        * @return
@@ -305,7 +320,7 @@ public abstract class TblUtils {
 
       /**
        * Parse the Ndx object to a byte array.
-       * 
+       *
        * @return
        * @throws Exception
        */
@@ -333,8 +348,6 @@ public abstract class TblUtils {
 
   public static void main(String[] args) {
     new DatabaseDesign();
-    System.out
-        .println(FileUtils.tblRef(InfoSchema.getInfoSchema(), InfoSchema.getSchemata()).length());
   }
 
 }
