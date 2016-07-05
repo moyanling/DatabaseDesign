@@ -5,7 +5,6 @@ import static org.mo39.fmbh.databasedesign.utils.NamingUtils.inferTableFromtbl;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
@@ -14,12 +13,9 @@ import java.util.regex.Pattern;
 
 import org.mo39.fmbh.databasedesign.framework.InfoSchema;
 import org.mo39.fmbh.databasedesign.model.Column;
-import org.mo39.fmbh.databasedesign.model.DBExceptions;
-import org.mo39.fmbh.databasedesign.model.DataType;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.common.io.Files;
 
 /**
  * This class handles file level process within the archive. It helps to analyze certain file name,
@@ -93,7 +89,7 @@ public abstract class FileUtils {
    */
   public static boolean createSchema(String schema) throws IOException {
     if (Paths.get(ARCHIVE_ROOT, schema).toFile().mkdirs()) {
-      UpdateInfoSchema.atCreatingSchema(schema);
+      InfoSchemaUtils.UpdateInfoSchema.atCreatingSchema(schema);
       return true;
     }
     return false;
@@ -117,7 +113,7 @@ public abstract class FileUtils {
         return false;
       }
     }
-    UpdateInfoSchema.atCreatingTable(schema, table, columns);
+    InfoSchemaUtils.UpdateInfoSchema.atCreatingTable(schema, table, columns);
     return true;
   }
 
@@ -130,7 +126,7 @@ public abstract class FileUtils {
    */
   public static boolean deleteTable(String schema, String table) {
     if (tblRef(schema, table).delete()) {
-      UpdateInfoSchema.atDroppingTable(schema, table);
+      InfoSchemaUtils.UpdateInfoSchema.atDroppingTable(schema, table);
     }
     return false;
   }
@@ -149,7 +145,7 @@ public abstract class FileUtils {
       }
     }
     if (Paths.get(ARCHIVE_ROOT, schema).toFile().delete()) {
-      UpdateInfoSchema.atDeletingSchema(schema);
+      InfoSchemaUtils.UpdateInfoSchema.atDeletingSchema(schema);
     }
     return false;
 
@@ -236,79 +232,6 @@ public abstract class FileUtils {
       }
     }
     return Collections.unmodifiableList(fileList);
-  }
-
-  /**
-   * Helper class used to read information from info schema.
-   *
-   * @author Jihan Chen
-   *
-   */
-  private static class InfoSchemaUtils {
-    /**
-     * Get schemas from SCHEMATA. This function is not relaying on the definition of SCHEMATA table.
-     * If the definition is changed, this function need to be changed as well.
-     *
-     * @return
-     */
-    public static Set<String> getSchemas() {
-      Set<String> schemas = Sets.newHashSet();
-      File tbl = tblRef(InfoSchema.getInfoSchema(), InfoSchema.getSchemata());
-      try {
-        byte[] fileContent = Files.toByteArray(tbl);
-        ByteBuffer bb = ByteBuffer.wrap(fileContent);
-        while (bb.hasRemaining()) {
-          schemas.add(DataType.parseVarCharFromByteBuffer(bb));
-        }
-      } catch (IOException e) {
-        DBExceptions.newError(e);
-      }
-      return schemas;
-    }
-
-    /**
-     * Get tables from TABLES. This function is not relaying on the definition of TABLES table. If
-     * the definition is changed, this function need to be changed as well.
-     *
-     * @param schema
-     * @return
-     */
-    public static Set<String> getTables(String schema) {
-      checkArgument(schema != null);
-      Set<String> tables = Sets.newHashSet();
-      File tbl = tblRef(InfoSchema.getInfoSchema(), InfoSchema.getTables());
-      try {
-        String schemaName;
-        String tableName;
-        byte[] fileContent = Files.toByteArray(tbl);
-        ByteBuffer bb = ByteBuffer.wrap(fileContent);
-        while (bb.hasRemaining()) {
-          schemaName = DataType.parseVarCharFromByteBuffer(bb);
-          tableName = DataType.parseVarCharFromByteBuffer(bb);
-          bb.position(bb.position() + 4);// Skip read the number of rows.
-          if (schemaName.equals(schema)) {
-            tables.add(tableName);
-          }
-        }
-      } catch (IOException e) {
-        DBExceptions.newError(e);
-      }
-      return tables;
-    }
-
-    /**
-     * Get columns from COLUMNS. This function is not relaying on the definition of COLUMNS table.
-     * If the definition is changed, this function need to be changed as well.
-     * 
-     * @param schema
-     * @param table
-     * @return
-     */
-    public static List<Column> getColumns(String schema, String table) {
-      checkArgument(schema != null && table != null);
-      // TODO get Columns
-      return null;
-    }
   }
 
 

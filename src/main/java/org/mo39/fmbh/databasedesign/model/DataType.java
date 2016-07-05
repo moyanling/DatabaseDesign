@@ -89,7 +89,7 @@ public class DataType {
    * @param arg
    * @return
    */
-  public static final byte[] parseIntToByteArray(String arg) {
+  public static byte[] parseIntToByteArray(String arg) {
     Preconditions.checkArgument(arg != null);
     Matcher m = nullValue.matcher(arg);
     if (m.matches()) {
@@ -104,7 +104,7 @@ public class DataType {
    * @param arr
    * @return
    */
-  public static final Integer parseIntFromByteBuffer(ByteBuffer bb) {
+  public static Integer parseIntFromByteBuffer(ByteBuffer bb) {
     int i = bb.getInt();
     return i == Integer.MIN_VALUE ? null : i;
   }
@@ -115,7 +115,7 @@ public class DataType {
    * @param arg
    * @return
    */
-  public static final byte[] parseByteToByteArray(String arg) {
+  public static byte[] parseByteToByteArray(String arg) {
     Preconditions.checkArgument(arg != null);
     Matcher m = nullValue.matcher(arg);
     if (m.matches()) {
@@ -130,7 +130,7 @@ public class DataType {
    * @param arr
    * @return
    */
-  public static final Byte parseByteFromByteBuffer(ByteBuffer bb) {
+  public static Byte parseByteFromByteBuffer(ByteBuffer bb) {
     byte b = bb.get();
     return b == Byte.MIN_VALUE ? null : b;
   }
@@ -142,7 +142,7 @@ public class DataType {
    * @param arg
    * @return
    */
-  public static final byte[] parseVarCharToByteArray(String arg) {
+  public static byte[] parseVarCharToByteArray(String arg) {
     Preconditions.checkArgument(arg != null);
     Matcher m = nullValue.matcher(arg);
     if (m.matches()) {
@@ -157,13 +157,14 @@ public class DataType {
     return bb.array();
   }
 
+
   /**
    * Parse the byte array back to a String.
    *
    * @param arr
    * @return
    */
-  public static final String parseVarCharFromByteBuffer(ByteBuffer bb) {
+  public static String parseVarCharFromByteBuffer(ByteBuffer bb) {
     byte len = bb.get();
     if (len == 0) {
       return null;
@@ -179,13 +180,23 @@ public class DataType {
    * @param arg
    * @return
    */
-  public static final byte[] parseLongToByteArray(String arg) {
+  public static byte[] parseLongToByteArray(String arg) {
     Preconditions.checkArgument(arg != null);
     Matcher m = nullValue.matcher(arg);
     if (m.matches()) {
       return ByteBuffer.allocate(8).putLong(Long.MIN_VALUE).array();
     }
     return ByteBuffer.allocate(8).putLong(Long.parseLong(arg)).array();
+  }
+  
+  /**
+   * Skip reading the next varchar.
+   * 
+   * @param bb
+   */
+  public static void skipVarChar(ByteBuffer bb) {
+    byte len = bb.get();
+    bb.position(bb.position() + len);
   }
 
   /**
@@ -194,7 +205,7 @@ public class DataType {
    * @param arr
    * @return
    */
-  public static final long parseLongFromByteBuffer(ByteBuffer bb) {
+  public static long parseLongFromByteBuffer(ByteBuffer bb) {
     long l = bb.getLong();
     return l == Long.MIN_VALUE ? null : l;
   }
