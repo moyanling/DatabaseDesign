@@ -19,7 +19,6 @@ import org.mo39.fmbh.databasedesign.model.Constraint.NotNull;
 import org.mo39.fmbh.databasedesign.model.Constraint.PrimaryKey;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
 import org.mo39.fmbh.databasedesign.model.DataType;
-import org.mo39.fmbh.databasedesign.model.Table;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -218,8 +217,8 @@ class InfoSchemaUtils {
 
 
   /**
-   * Helper class to update info schema. // TODO creating table and appending records do not work
-   * 
+   * Helper class to update info schema.
+   *
    * @author Jihan Chen
    *
    */
@@ -268,10 +267,10 @@ class InfoSchemaUtils {
         // rewrite the content of TABLES
         byte[] tablesContent = Files.toByteArray(tables);
         List<InfoTable> infoTableList = InfoTable.getInfoTableList(ByteBuffer.wrap(tablesContent));
-        // Update the number of rows in INFORMATION_SCHEMA.TABLES
+        // Update the number of rows in for COLUMNS.
         for (InfoTable it : infoTableList) {
           if (InfoSchema.getInfoSchema().equals(it.schema)
-              && InfoSchema.getTables().equals(it.table)) {
+              && InfoSchema.getColumns().equals(it.table)) {
             it.rows += cols.size();
           }
         }
@@ -309,17 +308,17 @@ class InfoSchemaUtils {
 
     /**
      * Update information schema when new records are appended to BD
-     * 
+     *
      * @param schema
      * @param table
      * @param i
      */
-    public static void atAppendingRecords(String schema, String table, Table t) {
+    public static void atAppendingRecords(String schema, String table, int num) {
       try {
         List<InfoTable> l = InfoTable.getInfoTableList(ByteBuffer.wrap(Files.toByteArray(tables)));
         for (InfoTable infoTable : l) {
           if (infoTable.schema.equals(schema) && infoTable.table.equals(table)) {
-            infoTable.rows += t.size();
+            infoTable.rows += num;
           }
         }
         Files.write(InfoTable.listToBytes(l), tables);

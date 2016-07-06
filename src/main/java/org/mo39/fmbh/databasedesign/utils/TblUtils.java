@@ -37,6 +37,7 @@ public abstract class TblUtils {
    * @throws IOException
    */
   public static void appendRecordsToDB(Table t, String schema, String table) throws IOException {
+    int rows = t.size();
     File tbl = FileUtils.tblRef(schema, table);
     ByteSink out = Files.asByteSink(tbl, FileWriteMode.APPEND);
     ByteArrayOutputStream byteMaker = new ByteArrayOutputStream();
@@ -71,7 +72,7 @@ public abstract class TblUtils {
         byteMaker.reset();
       }
       if (!schema.equals(InfoSchema.getInfoSchema())) {
-        InfoSchemaUtils.UpdateInfoSchema.atAppendingRecords(schema, table, t);
+        InfoSchemaUtils.UpdateInfoSchema.atAppendingRecords(schema, table, rows);
       }
     } catch (Exception e) {
       DBExceptions.newError(e);

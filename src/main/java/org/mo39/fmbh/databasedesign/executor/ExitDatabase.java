@@ -4,6 +4,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.mo39.fmbh.databasedesign.framework.Status;
+import org.mo39.fmbh.databasedesign.framework.SystemProperties;
 import org.mo39.fmbh.databasedesign.framework.View;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
@@ -30,7 +31,7 @@ public class ExitDatabase implements Executable, Viewable {
     Matcher matcher = regx.matcher(cmdStr);
 
     if (matcher.matches()) {
-      exit_message = "Exit Database...";
+      exit_message = "Exit Database..." + SystemProperties.get("lineBreak");
       View.newView(this);
       System.exit(0);
     } else {
