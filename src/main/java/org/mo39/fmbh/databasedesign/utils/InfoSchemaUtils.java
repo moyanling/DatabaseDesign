@@ -19,6 +19,7 @@ import org.mo39.fmbh.databasedesign.model.Constraint.NotNull;
 import org.mo39.fmbh.databasedesign.model.Constraint.PrimaryKey;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
 import org.mo39.fmbh.databasedesign.model.DataType;
+import org.mo39.fmbh.databasedesign.model.Table;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -302,10 +303,28 @@ class InfoSchemaUtils {
      */
     public static void atDeletingSchema(String schema) {
       // TODO update information schema when a schema is deleted
+      // try to use filter
     }
 
-    public static void atAppendingNewRecord() {
-      // TODO update information schema when a record is appended to DB
+    /**
+     * Update information schema when new records are appended to BD
+     * 
+     * @param schema
+     * @param table
+     * @param i
+     */
+    public static void atAppendingNewRecord(String schema, String table, Table t) {
+      try {
+        List<InfoTable> l = InfoTable.getInfoTableList(ByteBuffer.wrap(Files.toByteArray(tables)));
+        for (InfoTable infoTable : l) {
+          if (infoTable.schema.equals(schema) && infoTable.table.equals(table)) {
+            infoTable.rows += t.size();
+          }
+        }
+        Files.write(InfoTable.listToBytes(l), tables);
+      } catch (IOException e) {
+        DBExceptions.newError(e);
+      }
     }
 
     private static class InfoTable {

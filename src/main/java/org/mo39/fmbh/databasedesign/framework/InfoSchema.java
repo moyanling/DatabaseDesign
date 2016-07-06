@@ -3,6 +3,7 @@ package org.mo39.fmbh.databasedesign.framework;
 import static org.mo39.fmbh.databasedesign.utils.FileUtils.tblRef;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.List;
 
 import org.mo39.fmbh.databasedesign.model.Column;
@@ -45,6 +46,7 @@ public class InfoSchema {
       return;
     }
     try {
+      Paths.get(archiveRoot, infoSchema).toFile().mkdirs();
       createInformationTable(createSchemata, infoSchema, schemata, schemataValues);
       createInformationTable(createTables, infoSchema, tables, tablesValues);
       createInformationTable(createColumns, infoSchema, columns, columnsValues);

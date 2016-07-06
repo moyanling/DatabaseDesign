@@ -60,7 +60,7 @@ public abstract class RecordOperationExecutor {
     private String endMessage;
     private String lineBreak = SystemProperties.get("lineBreak");
     private static Pattern regex =
-        Pattern.compile("^SELECT\\s+(.*?)\\s+FROM\\s+(.*?)(\\s*?|\\s+WHERE\\s+(.*?=.*?))\\;$",
+        Pattern.compile("^SELECT\\s+(.*?)\\s+FROM\\s+(.*?)(\\s*?|\\s+WHERE\\s(.*=.*))\\;$",
             Pattern.CASE_INSENSITIVE);
 
     @Override

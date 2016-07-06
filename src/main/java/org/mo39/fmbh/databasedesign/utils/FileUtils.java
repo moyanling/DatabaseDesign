@@ -61,9 +61,7 @@ public abstract class FileUtils {
    */
   public static final File tblRef(String schema, String table) {
     checkArgument(schema != null && table != null);
-    return schema.equals(InfoSchema.getInfoSchema())
-        ? Paths.get(FileUtils.ARCHIVE_ROOT, schema + "." + table + ".tbl").toFile()
-        : Paths.get(FileUtils.ARCHIVE_ROOT, schema, table + ".tbl").toFile();
+    return Paths.get(FileUtils.ARCHIVE_ROOT, schema, table + ".tbl").toFile();
   }
 
   /**
@@ -76,9 +74,7 @@ public abstract class FileUtils {
    */
   public static final File ndxRef(String schema, String table, String column) {
     checkArgument(schema != null && table != null && column != null);
-    return schema.equals(InfoSchema.getInfoSchema())
-        ? Paths.get(FileUtils.ARCHIVE_ROOT, schema + "." + table + "." + column + ".ndx").toFile()
-        : Paths.get(FileUtils.ARCHIVE_ROOT, schema, table + "." + column + ".ndx").toFile();
+    return Paths.get(FileUtils.ARCHIVE_ROOT, schema, table + "." + column + ".ndx").toFile();
   }
 
   /**
@@ -195,7 +191,9 @@ public abstract class FileUtils {
     File[] files = new File(ARCHIVE_ROOT).listFiles();
     for (File file : files) {
       if (file.isDirectory()) {
-        schemas.add(file.getName());
+        if (!file.getName().equals(InfoSchema.getInfoSchema())) {
+          schemas.add(file.getName());
+        }
       }
     }
     return schemas.equals(getSchemaSet());

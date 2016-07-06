@@ -2,6 +2,7 @@ package org.mo39.fmbh.databasedesign.utils;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -13,6 +14,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.mo39.fmbh.databasedesign.framework.DatabaseDesign;
+import org.mo39.fmbh.databasedesign.framework.InfoSchema;
 import org.mo39.fmbh.databasedesign.model.Column;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.ColumnNameNotFoundException;
@@ -37,6 +39,7 @@ public abstract class TblUtils {
   public static void appendRecordsToDB(Table t, String schema, String table) throws IOException {
     File tbl = FileUtils.tblRef(schema, table);
     ByteSink out = Files.asByteSink(tbl, FileWriteMode.APPEND);
+    ByteArrayOutputStream byteMaker = new ByteArrayOutputStream();
     // Reusable references
     Column col;
     String value;
@@ -49,6 +52,8 @@ public abstract class TblUtils {
          * When a new record is appended to DB, it is separated into several value. Each value
          * matches a Column object. When each value is parsed to byte array and written to DB, the
          * corrsponding ndx file for this column will be updated.
+         * <p>
+         * The Column should be updated before write a whole record to the tbl file.
          */
         for (int i = 0; i < valueArray.length; i++) {
           value = valueArray[i].trim();
@@ -56,11 +61,17 @@ public abstract class TblUtils {
           // parse the value for this column and write the value to DB
           Method method =
               DataType.class.getMethod(col.getDataType().getParseToByteArray(), String.class);
-          out.write((byte[]) method.invoke(null, value));
+          byteMaker.write((byte[]) method.invoke(null, value));
           // ----------------------
           NdxUtils.updateIndexAtAppendingColumn(schema, table, col, value,
               (int) FileUtils.tblRef(schema, table).length());
         }
+        out.write(byteMaker.toByteArray());
+        // Clear the old byte array
+        byteMaker.reset();
+      }
+      if (!schema.equals(InfoSchema.getInfoSchema())) {
+        InfoSchemaUtils.UpdateInfoSchema.atAppendingNewRecord(schema, table, t);
       }
     } catch (Exception e) {
       DBExceptions.newError(e);
@@ -127,12 +138,12 @@ public abstract class TblUtils {
       Pattern p = Pattern.compile("WHERE(.*)=(.*)", Pattern.CASE_INSENSITIVE);
       Matcher m = p.matcher(whereClause);
       m.matches();
-      String columnName = m.group(1);
-      String value = m.group(2);
+      String columnName = m.group(1).trim();
+      String value = m.group(2).trim();
       // Get Column according to the columnName
       Column column = null;
       for (Column col : cols) {
-        if (col.getName().equals(columnName)) {
+        if (col.getName().equalsIgnoreCase(columnName)) {
           column = col;
           break;
         }
@@ -153,11 +164,11 @@ public abstract class TblUtils {
     } catch (Exception e) {
       DBExceptions.newError(e);
     }
-    return null;
+    return toRet;
   }
 
   /**
-   * Check if there's no duplicate value for a primary key.//TODO does not work. cannot find Ndx.
+   * Check if there's no duplicate value for a primary key.
    *
    * @param schema
    * @param table
@@ -197,7 +208,6 @@ public abstract class TblUtils {
       Ndx ndx = findNdx(col, value, ndxList);
       // ----------------------
       if (ndx == null) {
-        System.out.println("No Ndx is found");
         // If no position is found, append the new one to the ndx list.
         Ndx newNdx = new Ndx(col, value, position);
         ndxList.add(newNdx);
@@ -254,7 +264,7 @@ public abstract class TblUtils {
           DataType.class.getMethod(col.getDataType().getParseFromByteBuffer(), ByteBuffer.class)
               .invoke(null, ByteBuffer.wrap(byteArray));
       for (Ndx ndx : ndxList) {
-        if (ndx.value == null ? dataTypeValue == null : value.equals(dataTypeValue)) {
+        if (ndx.value == null ? dataTypeValue == null : ndx.value.equals(dataTypeValue)) {
           return ndx;
         }
       }
