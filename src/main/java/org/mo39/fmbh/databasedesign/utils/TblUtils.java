@@ -71,7 +71,7 @@ public abstract class TblUtils {
         byteMaker.reset();
       }
       if (!schema.equals(InfoSchema.getInfoSchema())) {
-        InfoSchemaUtils.UpdateInfoSchema.atAppendingNewRecord(schema, table, t);
+        InfoSchemaUtils.UpdateInfoSchema.atAppendingRecords(schema, table, t);
       }
     } catch (Exception e) {
       DBExceptions.newError(e);

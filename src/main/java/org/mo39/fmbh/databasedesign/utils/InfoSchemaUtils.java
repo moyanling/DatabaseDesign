@@ -218,8 +218,8 @@ class InfoSchemaUtils {
 
 
   /**
-   * Helper class to update info schema.
-   *
+   * Helper class to update info schema. // TODO creating table and appending records do not work
+   * 
    * @author Jihan Chen
    *
    */
@@ -268,9 +268,10 @@ class InfoSchemaUtils {
         // rewrite the content of TABLES
         byte[] tablesContent = Files.toByteArray(tables);
         List<InfoTable> infoTableList = InfoTable.getInfoTableList(ByteBuffer.wrap(tablesContent));
-        // Update the number of rows in INFORMATION_SCHEMA.COLUMNS
+        // Update the number of rows in INFORMATION_SCHEMA.TABLES
         for (InfoTable it : infoTableList) {
-          if (schema.equals(InfoSchema.getInfoSchema()) && table.equals(InfoSchema.getTables())) {
+          if (InfoSchema.getInfoSchema().equals(it.schema)
+              && InfoSchema.getTables().equals(it.table)) {
             it.rows += cols.size();
           }
         }
@@ -313,7 +314,7 @@ class InfoSchemaUtils {
      * @param table
      * @param i
      */
-    public static void atAppendingNewRecord(String schema, String table, Table t) {
+    public static void atAppendingRecords(String schema, String table, Table t) {
       try {
         List<InfoTable> l = InfoTable.getInfoTableList(ByteBuffer.wrap(Files.toByteArray(tables)));
         for (InfoTable infoTable : l) {
