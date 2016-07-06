@@ -43,7 +43,7 @@ public abstract class RecordOperationExecutor {
       String table = matcher.group(1);
       String values = matcher.group(2);
       if (!NamingUtils.checkNamingConventions(table)) {
-        throw new BadUsageException("Bad table name");
+        throw new BadUsageException("Bad table name: " + table);
       }
       if (!FileUtils.getTableSet(schema).contains(table)) {
         throw new BadUsageException("Table not found in current schema");
@@ -104,8 +104,40 @@ public abstract class RecordOperationExecutor {
       }
       endMessage = sb.substring(0, sb.length() - 1);
     }
+  }
 
+  public static class Delete implements Executable, Viewable {
 
+    private String endMessage;
+    private static Pattern regex = Pattern.compile(
+        "^DELETE\\s+FROM\\s+(.*?)(\\s*?|\\s+WHERE\\s(.*=.*))\\;$", Pattern.CASE_INSENSITIVE);
+
+    @Override
+    public String getView() {
+      return endMessage;
+    }
+
+    @Override
+    public void execute() throws DBExceptions, IOException {
+      String cmd = Status.getCurrentCmdStr();
+      Matcher m = regex.matcher(cmd);
+      if (!m.matches()) {
+        throw new BadUsageException("DELETE syntax not match.");
+      }
+      // ----------------------
+      String table = m.group(1);
+      if (!NamingUtils.checkNamingConventions(table)) {
+        throw new BadUsageException("Bad table name");
+      }
+      // ----------------------
+      String whereClause = m.group(2).trim();
+      try {
+        TblUtils.deleteFromDB(Status.getCurrentSchema(), table, whereClause);
+      } catch (IOException e) {
+        DBExceptions.newError(e);
+      }
+      endMessage = "Records deleted.";
+    }
 
   }
 

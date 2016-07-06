@@ -307,18 +307,48 @@ class InfoSchemaUtils {
     }
 
     /**
-     * Update information schema when new records are appended to BD
+     * Update information schema when records are deleted from DB
+     *
+     * @param schema
+     * @param table
+     * @param num
+     */
+    public static void atDeletingRecords(String schema, String table, int numToMinus) {
+      modifyRecordNums(schema, table, 0 - numToMinus);
+    }
+
+    /**
+     * Update information schema when records are deleted from DB
+     *
+     * @param schema
+     * @param table
+     * @param num
+     */
+    public static void atDeletingAllRecords(String schema, String table) {
+      modifyRecordNums(schema, table, 0);
+    }
+
+    /**
+     * Update information schema when new records are appended to DB
      *
      * @param schema
      * @param table
      * @param i
      */
-    public static void atAppendingRecords(String schema, String table, int num) {
+    public static void atAppendingRecords(String schema, String table, int numToAdd) {
+      modifyRecordNums(schema, table, numToAdd);
+    }
+
+    private static void modifyRecordNums(String schema, String table, int num) {
       try {
         List<InfoTable> l = InfoTable.getInfoTableList(ByteBuffer.wrap(Files.toByteArray(tables)));
         for (InfoTable infoTable : l) {
           if (infoTable.schema.equals(schema) && infoTable.table.equals(table)) {
-            infoTable.rows += num;
+            if (num == 0) {
+              infoTable.rows = 0;
+            } else {
+              infoTable.rows += num;
+            }
           }
         }
         Files.write(InfoTable.listToBytes(l), tables);

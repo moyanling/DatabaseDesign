@@ -21,13 +21,18 @@ import org.mo39.fmbh.databasedesign.model.DataType;
 public abstract class BeanUtils {
 
   /**
-   * Parse a byte array according to Column definitions to create a bean.
+   * Parse a byte array according to Column definitions to create a bean. If the first byte of the
+   * record is not 1, it means this record is not active and will return null;
    *
    * @param beanClass
    * @param columns
    * @return
    */
   public static final Object parse(Class<?> beanClass, List<Column> columns, ByteBuffer record) {
+    byte activeByte = record.get();
+    if (activeByte != 1) {
+      return null;
+    }
     try {
       Object toRet = beanClass.newInstance();
       for (Column col : columns) {

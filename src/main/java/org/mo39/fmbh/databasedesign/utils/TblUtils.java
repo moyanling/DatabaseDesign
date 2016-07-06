@@ -30,6 +30,12 @@ public abstract class TblUtils {
 
   /**
    * Parse the String form record into byte array and append the bytes to the end of the tbl file.
+   * <br>
+   * An active byte value if the operating schema is not INFORMATION_SCHEMA. If it's 1, it means the
+   * value is active, otherwise it's considered as deleted and should be excluded from all the
+   * queries.
+   *
+   * // TODO prepend a active byte only when it's not INFORMATION_SCHEMA
    *
    * @param t
    * @param schema
@@ -49,6 +55,10 @@ public abstract class TblUtils {
     try {
       for (String record : t) {
         valueArray = record.split(",");
+        if (!schema.equals(InfoSchema.getInfoSchema())) {
+          // This is the active byte value at the beginning of each record.
+          byteMaker.write(1);
+        }
         /**
          * When a new record is appended to DB, it is separated into several value. Each value
          * matches a Column object. When each value is parsed to byte array and written to DB, the
@@ -76,6 +86,148 @@ public abstract class TblUtils {
       }
     } catch (Exception e) {
       DBExceptions.newError(e);
+    }
+  }
+
+  /**
+   * Remove records from specified table.
+   *
+   * @param currentSchema
+   * @param table
+   * @param whereClause
+   * @return
+   * @throws DBExceptions
+   */
+  public static void deleteFromDB(String schema, String table, String whereClause)
+      throws IOException, DBExceptions {
+    checkArgument(schema != null && table != null && whereClause != null);
+    // ----------------------
+    File file = FileUtils.tblRef(schema, table);
+    // No columnName and value specified
+    if (whereClause.equals("")) {
+      // TODO
+      InfoSchemaUtils.UpdateInfoSchema.atDeletingAllRecords(schema, table);
+      return;
+    }
+    // Find record according to index file
+    try {
+      // ----------------------
+      byte[] fileContent = Files.toByteArray(file);
+      ByteBuffer bb = ByteBuffer.wrap(fileContent);
+      List<Column> cols = FileUtils.getColumnList(schema, table);
+      // Extract column name and value
+      Pattern p = Pattern.compile("WHERE(.*)=(.*)", Pattern.CASE_INSENSITIVE);
+      Matcher m = p.matcher(whereClause);
+      m.matches();
+      String columnName = m.group(1).trim();
+      String value = m.group(2).trim();
+      // Get Column according to the columnName
+      Column column = null;
+      for (Column col : cols) {
+        if (col.getName().equalsIgnoreCase(columnName)) {
+          column = col;
+          break;
+        }
+      }
+      if (column == null) {
+        throw new ColumnNameNotFoundException("'" + columnName + "' is not found.");
+      }
+      // ----------------------
+      List<NdxUtils.Ndx> ndxList = NdxUtils.getNdxList(schema, table, column);
+      NdxUtils.Ndx ndx = NdxUtils.findNdx(column, value, ndxList);
+      // TODO
+    } catch (DBExceptions e) {
+      throw e;
+    } catch (Exception e) {
+      DBExceptions.newError(e);
+    }
+  }
+
+  /**
+   * Select records from DB and form the record into a bean class using {@link BeanUtils}.
+   *
+   * @param schema
+   * @param table
+   * @param whereClause
+   * @param beanClass
+   * @return
+   * @throws DBExceptions
+   * @throws IOException
+   */
+  public static List<Object> selectFromDB(String schema, String table, Class<?> beanClass,
+      String whereClause) throws DBExceptions, IOException {
+    checkArgument(schema != null && table != null && beanClass != null);
+    // ----------------------
+    byte[] fileContent = Files.toByteArray(FileUtils.tblRef(schema, table));
+    ByteBuffer bb = ByteBuffer.wrap(fileContent);
+    List<Object> toRet = Lists.newArrayList();
+    List<Column> cols = FileUtils.getColumnList(schema, table);
+    // No columnName and value specified
+    if (whereClause.equals("")) {
+      while (bb.hasRemaining()) {
+        Object obj = BeanUtils.parse(beanClass, cols, bb);
+        if (obj != null) {
+          toRet.add(obj);
+        }
+      }
+      return toRet;
+    }
+    // Find record according to index file
+    try {
+      // Extract column name and value
+      Pattern p = Pattern.compile("WHERE(.*)=(.*)", Pattern.CASE_INSENSITIVE);
+      Matcher m = p.matcher(whereClause);
+      m.matches();
+      String columnName = m.group(1).trim();
+      String value = m.group(2).trim();
+      // Get Column according to the columnName
+      Column column = null;
+      for (Column col : cols) {
+        if (col.getName().equalsIgnoreCase(columnName)) {
+          column = col;
+          break;
+        }
+      }
+      if (column == null) {
+        throw new ColumnNameNotFoundException("'" + columnName + "' is not found.");
+      }
+      // ----------------------
+      List<NdxUtils.Ndx> ndxList = NdxUtils.getNdxList(schema, table, column);
+      NdxUtils.Ndx ndx = NdxUtils.findNdx(column, value, ndxList);
+      if (ndx != null) {
+        List<Integer> positions = ndx.positions;
+        for (Integer posi : positions) {
+          bb.position(posi);
+          Object obj = BeanUtils.parse(beanClass, cols, bb);
+          if (obj != null) {
+            toRet.add(obj);
+          }
+        }
+      }
+    } catch (DBExceptions e) {
+      throw e;
+    } catch (Exception e) {
+      DBExceptions.newError(e);
+    }
+    return toRet;
+  }
+
+  /**
+   * Check if there's no duplicate value for a primary key.
+   *
+   * @param schema
+   * @param table
+   * @param col
+   * @param value
+   * @return
+   */
+  public static boolean checkPrimaryKey(String schema, String table, Column col, String value) {
+    try {
+      List<NdxUtils.Ndx> ndxList = NdxUtils.getNdxList(schema, table, col);
+      return NdxUtils.findNdx(col, value, ndxList) == null;
+    } catch (Exception e) {
+      DBExceptions.newError(e);
+      return false;
     }
   }
 
@@ -108,87 +260,11 @@ public abstract class TblUtils {
   }
 
   /**
-   * Select records from DB and form the record into a bean class using {@link BeanUtils}.
+   * A private class that helps to handle ndx file.
    *
-   * @param schema
-   * @param table
-   * @param whereClause
-   * @param beanClass
-   * @return
-   * @throws DBExceptions
-   * @throws IOException
-   */
-  public static List<Object> selectFromDB(String schema, String table, Class<?> beanClass,
-      String whereClause) throws DBExceptions, IOException {
-    checkArgument(schema != null && table != null && beanClass != null);
-    // ----------------------
-    byte[] fileContent = Files.toByteArray(FileUtils.tblRef(schema, table));
-    ByteBuffer bb = ByteBuffer.wrap(fileContent);
-    List<Object> toRet = Lists.newArrayList();
-    List<Column> cols = FileUtils.getColumnList(schema, table);
-    // No columnName and value specified
-    if (whereClause.equals("")) {
-      while (bb.hasRemaining()) {
-        toRet.add(BeanUtils.parse(beanClass, cols, bb));
-      }
-      return toRet;
-    }
-    // Find record according to index file
-    try {
-      // Extract column name and value
-      Pattern p = Pattern.compile("WHERE(.*)=(.*)", Pattern.CASE_INSENSITIVE);
-      Matcher m = p.matcher(whereClause);
-      m.matches();
-      String columnName = m.group(1).trim();
-      String value = m.group(2).trim();
-      // Get Column according to the columnName
-      Column column = null;
-      for (Column col : cols) {
-        if (col.getName().equalsIgnoreCase(columnName)) {
-          column = col;
-          break;
-        }
-      }
-      if (column == null) {
-        throw new ColumnNameNotFoundException("'" + columnName + "' is not found.");
-      }
-      // ----------------------
-      List<NdxUtils.Ndx> ndxList = NdxUtils.getNdxList(schema, table, column);
-      NdxUtils.Ndx ndx = NdxUtils.findNdx(column, value, ndxList);
-      List<Integer> positions = ndx.positions;
-      for (Integer posi : positions) {
-        bb.position(posi);
-        toRet.add(BeanUtils.parse(beanClass, cols, bb));
-      }
-    } catch (DBExceptions e) {
-      throw e;
-    } catch (Exception e) {
-      DBExceptions.newError(e);
-    }
-    return toRet;
-  }
-
-  /**
-   * Check if there's no duplicate value for a primary key.
+   * @author Jihan Chen
    *
-   * @param schema
-   * @param table
-   * @param col
-   * @param value
-   * @return
    */
-  public static boolean checkPrimaryKey(String schema, String table, Column col, String value) {
-    try {
-      List<NdxUtils.Ndx> ndxList = NdxUtils.getNdxList(schema, table, col);
-      return NdxUtils.findNdx(col, value, ndxList) == null;
-    } catch (Exception e) {
-      DBExceptions.newError(e);
-      return false;
-    }
-  }
-
-
-
   private static class NdxUtils {
 
     /**
@@ -250,7 +326,6 @@ public abstract class TblUtils {
     }
 
     /**
-     *
      *
      * @param col
      * @param value
@@ -360,6 +435,7 @@ public abstract class TblUtils {
   public static void main(String[] args) {
     new DatabaseDesign();
   }
+
 
 }
 
