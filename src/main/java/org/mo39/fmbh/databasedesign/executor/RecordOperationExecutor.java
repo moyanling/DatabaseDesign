@@ -83,7 +83,7 @@ public abstract class RecordOperationExecutor {
       try {
         beanClass = Class.forName(className);
       } catch (ClassNotFoundException e) {
-        throw new ClassNotFound(e.getMessage() + " is not Found.");
+        throw new ClassNotFound("Class '" + e.getMessage() + "' is not Found.");
       }
       // ----------------------
       String table = m.group(2);
