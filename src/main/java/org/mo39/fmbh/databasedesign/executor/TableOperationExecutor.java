@@ -50,7 +50,7 @@ public abstract class TableOperationExecutor {
       Set<String> tableSet = FileUtils.getTableSet(Status.getCurrentSchema());
       StringBuilder sb = new StringBuilder("Show Tables: ");
       if (tableSet.size() == 0) {
-        sb.append(lineBreak + tab + "None");
+        sb.append(lineBreak + tab + "None  ");
       } else {
         for (String table : tableSet) {
           sb.append(lineBreak + tab + table + lineBreak);

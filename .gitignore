@@ -1,5 +1,6 @@
 # mo39.fmbh #
 *.pdf
+/archive
 
 # Directories #
 /build/

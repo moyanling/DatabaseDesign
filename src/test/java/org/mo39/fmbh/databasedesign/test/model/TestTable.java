@@ -26,15 +26,6 @@ public class TestTable {
   }
 
   @Test
-  public void testAddRecord() {
-//    Table t = Table.init(Column.newColumnDefinition("id int, description varchar(20)"));
-//    t.addRecord("39, Hello world");
-//    Assert.assertArrayEquals(
-//        new byte[] {0, 0, 0, 39, 11, 72, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100},
-//        t.getRecord());
-  }
-
-  @Test
   public void testRemoveRecordFromList() {
     ArrayList<String> x = Lists.newArrayList("0", "1", "2", "3", "4", "5");
     for (int i = 0; i < x.size(); i++) {

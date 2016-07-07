@@ -77,7 +77,7 @@
 		<bean id="select" class="org.mo39.fmbh.databasedesign.model.Cmd">
 			<property name="name" value="SELECT ... ;" />
 			<property name="regx" value="^SELECT\s+.*?FROM\s+.*?\;$" />
-			<property name="description" value="SELECT-FROM-WHERE style query " />
+			<property name="description" value="SELECT &lt;FULL-QUALIFIED-JAVA-BEAN-CLASS-NAME&gt; FROM-WHERE style query. This will match the columns to bean properties." />
 			<property name="executorClassName" value="org.mo39.fmbh.databasedesign.executor.RecordOperationExecutor$Select" />
 		</bean>
 

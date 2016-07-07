@@ -29,10 +29,6 @@ public abstract class BeanUtils {
    * @return
    */
   public static final Object parse(Class<?> beanClass, List<Column> columns, ByteBuffer record) {
-    byte activeByte = record.get();
-    if (activeByte != 1) {
-      return null;
-    }
     try {
       Object toRet = beanClass.newInstance();
       for (Column col : columns) {

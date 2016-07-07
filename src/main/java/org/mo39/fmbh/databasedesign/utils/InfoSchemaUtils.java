@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.junit.Assert;
 import org.mo39.fmbh.databasedesign.framework.InfoSchema;
@@ -101,16 +102,17 @@ class InfoSchemaUtils {
   public static List<Column> getColumns(String schema, String table) {
     checkArgument(schema != null && table != null);
     List<Column> cols = Lists.newArrayList();
-    Column col = null;
     try {
-      byte[] fileContent =
-          Files.toByteArray(FileUtils.tblRef(InfoSchema.getInfoSchema(), InfoSchema.getColumns()));
+      byte[] fileContent = Files.toByteArray(UpdateInfoSchema.columns);
       ByteBuffer bb = ByteBuffer.wrap(fileContent);
-      while (bb.hasRemaining()) {
-        if ((col = byteBufferToColumn(schema, table, bb)) != null) {
-          cols.add(col);
-        }
+      List<UpdateInfoSchema.InfoColumn> list = UpdateInfoSchema.InfoColumn.getInfoColumnList(bb);
+      List<UpdateInfoSchema.InfoColumn> filteredList =
+          list.stream().filter(i -> i.schema.equals(schema) && i.table.equals(table))
+              .collect(Collectors.toList());
+      for (UpdateInfoSchema.InfoColumn ic : filteredList) {
+        cols.add(ic.col);
       }
+      return cols;
     } catch (IOException e) {
       DBExceptions.newError(e);
     }
@@ -130,88 +132,6 @@ class InfoSchemaUtils {
     Collections.sort(cols);
     Assert.assertEquals(temp, cols);
     return cols;
-  }
-
-  /**
-   * Parse a {@link Column} object to byte array. This function is not relaying on the definition of
-   * COLUMNS table.
-   * <p>
-   * If the definition is updated, this function need to be updated as well.
-   *
-   * @param schema
-   * @param table
-   * @param col
-   * @return
-   */
-  private static byte[] columnToBytes(String schema, String table, Column col) {
-    try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-      out.write(DataType.parseVarCharToByteArray(schema));
-      out.write(DataType.parseVarCharToByteArray(table));
-      out.write(DataType.parseVarCharToByteArray(col.getName()));
-      out.write(DataType.parseByteToByteArray(String.valueOf(col.getOrdinalPosi())));
-      out.write(DataType.parseVarCharToByteArray(col.getDataType().getArg()));
-      // parse the constraint
-      Constraint con = col.getConstraint();
-      if (con instanceof NotNull) {
-        out.write(DataType.parseVarCharToByteArray("YES"));
-        out.write(DataType.parseVarCharToByteArray("NULL"));
-      } else if (con instanceof PrimaryKey) {
-        out.write(DataType.parseVarCharToByteArray("YES"));
-        out.write(DataType.parseVarCharToByteArray("YES"));
-      } else if (con instanceof NoConstraint) {
-        out.write(DataType.parseVarCharToByteArray("NULL"));
-        out.write(DataType.parseVarCharToByteArray("NULL"));
-      }
-      // ----------------------
-      return out.toByteArray();
-    } catch (IOException e) {
-      DBExceptions.newError(e);
-      return null;
-    }
-  }
-
-  /**
-   * Read in one Column byte array from COLUMNS and convert to a Column Object. This function is not
-   * relaying on the definition of COLUMNS table.
-   * <p>
-   * If the definition is updated, this function need to be updated as well.
-   * <p>
-   * If a column is the primary key, the not null attribute for this column is "YES" as well.
-   * </p>
-   *
-   * @param schema
-   * @param table
-   * @param bb
-   * @return {@code null} if the schema and table name are not matched, else a new {@link Column}
-   *         object is returned.
-   */
-  private static Column byteBufferToColumn(String schema, String table, ByteBuffer bb) {
-    Column col = null;
-    // Read in one Column byte array.
-    String schemaName = DataType.parseVarCharFromByteBuffer(bb);
-    String tableName = DataType.parseVarCharFromByteBuffer(bb);
-    String columnName = DataType.parseVarCharFromByteBuffer(bb);
-    int ordinalPosi = DataType.parseByteFromByteBuffer(bb);
-    String dataTypeArg = DataType.parseVarCharFromByteBuffer(bb);
-    String notNullArg = DataType.parseVarCharFromByteBuffer(bb);
-    String primaryArg = DataType.parseVarCharFromByteBuffer(bb);
-    // ----------------------
-    if (schemaName.equals(schema) && tableName.equals(table)) {
-      // parse the constraint
-      Constraint con = null;
-      if (notNullArg == null && primaryArg == null) {
-        con = Constraint.supports("");
-      } else if (notNullArg.equals("YES") && primaryArg == null) {
-        con = Constraint.supports("NOT NULL");
-      } else if (notNullArg.equals("YES") && primaryArg.equals("YES")) {
-        con = Constraint.supports("PRIMARY KEY");
-      } else {
-        DBExceptions.newError("No constraint is found");
-      }
-      // ----------------------
-      col = new Column(columnName, DataType.supports(dataTypeArg), con, ordinalPosi);
-    }
-    return col;
   }
 
 
@@ -260,9 +180,11 @@ class InfoSchemaUtils {
     public static void atCreatingTable(String schema, String table, List<Column> cols) {
       ByteSink columnsOut = Files.asByteSink(columns, FileWriteMode.APPEND);
       try {
+        InfoColumn ic;
         // Write to COLUMNS
         for (Column col : cols) {
-          columnsOut.write(InfoSchemaUtils.columnToBytes(schema, table, col));
+          ic = new InfoColumn(schema, table, col);
+          columnsOut.write(ic.toBytes());
         }
         // rewrite the content of TABLES
         byte[] tablesContent = Files.toByteArray(tables);
@@ -292,40 +214,68 @@ class InfoSchemaUtils {
      * @return
      */
     public static void atDroppingTable(String schema, String table) {
-      // TODO update information schema when a table is deleted
+      try {
+        // ----------------------
+        byte[] tablesContent = Files.toByteArray(tables);
+        List<InfoTable> infoTableList = InfoTable.getInfoTableList(ByteBuffer.wrap(tablesContent));
+        // Delete the InfoTable where schema and table match.
+        List<InfoTable> filteredList =
+            infoTableList.stream().filter(i -> !i.schema.equals(schema) || !i.table.equals(table))
+                .collect(Collectors.toList());
+        // rewrite the content of TABLES
+        Files.write(InfoTable.listToBytes(filteredList), tables);
+        // ----------------------
+        byte[] columnsContent = Files.toByteArray(columns);
+        List<InfoColumn> list = InfoColumn.getInfoColumnList(ByteBuffer.wrap(columnsContent));
+        List<InfoColumn> filtered =
+            list.stream().filter(i -> !i.schema.equals(schema) || !i.table.equals(table))
+                .collect(Collectors.toList());
+        Files.write(InfoColumn.listToBytes(filtered), columns);
+      } catch (IOException e) {
+        DBExceptions.newError(e);
+      }
     }
 
     /**
-     * Update information schema when schema is deleted.
+     * Update information schema when schema is deleted. This function removes all tables of this
+     * schema from TABLES, and removes all columns of this schema from COLUMS.
      *
      * @param schema
      * @return
      */
     public static void atDeletingSchema(String schema) {
-      // TODO update information schema when a schema is deleted
-      // try to use filter
-    }
-
-    /**
-     * Update information schema when records are deleted from DB
-     *
-     * @param schema
-     * @param table
-     * @param num
-     */
-    public static void atDeletingRecords(String schema, String table, int numToMinus) {
-      modifyRecordNums(schema, table, 0 - numToMinus);
-    }
-
-    /**
-     * Update information schema when records are deleted from DB
-     *
-     * @param schema
-     * @param table
-     * @param num
-     */
-    public static void atDeletingAllRecords(String schema, String table) {
-      modifyRecordNums(schema, table, 0);
+      try {
+        // ----------------------
+        byte[] tablesContent = Files.toByteArray(tables);
+        List<InfoTable> infoTableList = InfoTable.getInfoTableList(ByteBuffer.wrap(tablesContent));
+        // Delete the InfoTable where schema and table match.
+        List<InfoTable> filteredList = infoTableList.stream().filter(i -> !i.schema.equals(schema))
+            .collect(Collectors.toList());
+        // rewrite the content of TABLES
+        Files.write(InfoTable.listToBytes(filteredList), tables);
+        // ----------------------
+        byte[] columnsContent = Files.toByteArray(columns);
+        List<InfoColumn> list = InfoColumn.getInfoColumnList(ByteBuffer.wrap(columnsContent));
+        List<InfoColumn> filtered =
+            list.stream().filter(i -> !i.schema.equals(schema)).collect(Collectors.toList());
+        Files.write(InfoColumn.listToBytes(filtered), columns);
+        // ----------------------
+        byte[] schemataContent = Files.toByteArray(schemata);
+        ByteBuffer bb = ByteBuffer.wrap(schemataContent);
+        List<String> schemas = Lists.newArrayList();
+        while (bb.hasRemaining()) {
+          schemas.add(DataType.parseVarCharFromByteBuffer(bb));
+        }
+        List<String> filteredSchemas =
+            schemas.stream().filter(i -> !i.equals(schema)).collect(Collectors.toList());
+        ByteArrayOutputStream byteMaker = new ByteArrayOutputStream();
+        for (String arg : filteredSchemas) {
+          byteMaker.write(DataType.parseVarCharToByteArray(arg));
+        }
+        Files.write(byteMaker.toByteArray(), schemata);
+      } catch (IOException e) {
+        DBExceptions.newError(e);
+      }
     }
 
     /**
@@ -335,20 +285,12 @@ class InfoSchemaUtils {
      * @param table
      * @param i
      */
-    public static void atAppendingRecords(String schema, String table, int numToAdd) {
-      modifyRecordNums(schema, table, numToAdd);
-    }
-
-    private static void modifyRecordNums(String schema, String table, int num) {
+    public static void atAppendingRecords(String schema, String table, int num) {
       try {
         List<InfoTable> l = InfoTable.getInfoTableList(ByteBuffer.wrap(Files.toByteArray(tables)));
         for (InfoTable infoTable : l) {
           if (infoTable.schema.equals(schema) && infoTable.table.equals(table)) {
-            if (num == 0) {
-              infoTable.rows = 0;
-            } else {
-              infoTable.rows += num;
-            }
+            infoTable.rows += num;
           }
         }
         Files.write(InfoTable.listToBytes(l), tables);
@@ -356,6 +298,122 @@ class InfoSchemaUtils {
         DBExceptions.newError(e);
       }
     }
+
+    private static class InfoColumn {
+      public String schema;
+      public String table;
+      public Column col;
+
+      public InfoColumn(String schema, String table, Column col) {
+        this.schema = schema;
+        this.table = table;
+        this.col = col;
+      }
+
+
+      public static byte[] listToBytes(List<InfoColumn> filtered) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try {
+          for (InfoColumn ic : filtered) {
+            out.write(ic.toBytes());
+          }
+          return out.toByteArray();
+        } catch (IOException e) {
+          DBExceptions.newError(e);
+        }
+        return null;
+      }
+
+
+      public static List<InfoColumn> getInfoColumnList(ByteBuffer bb) {
+        List<InfoColumn> infoColumnList = Lists.newArrayList();
+        while (bb.hasRemaining()) {
+          infoColumnList.add(parseFromByteBuffer(bb));
+        }
+        return infoColumnList;
+      }
+
+      /**
+       * Parse a {@link Column} object to byte array. This function is not relaying on the
+       * definition of COLUMNS table.
+       * <p>
+       * If the definition is updated, this function need to be updated as well.
+       *
+       * @param schema
+       * @param table
+       * @param col
+       * @return
+       */
+      public byte[] toBytes() {
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+          out.write(DataType.parseVarCharToByteArray(schema));
+          out.write(DataType.parseVarCharToByteArray(table));
+          out.write(DataType.parseVarCharToByteArray(col.getName()));
+          out.write(DataType.parseByteToByteArray(String.valueOf(col.getOrdinalPosi())));
+          out.write(DataType.parseVarCharToByteArray(col.getDataType().getArg()));
+          // parse the constraint
+          Constraint con = col.getConstraint();
+          if (con instanceof NotNull) {
+            out.write(DataType.parseVarCharToByteArray("YES"));
+            out.write(DataType.parseVarCharToByteArray("NULL"));
+          } else if (con instanceof PrimaryKey) {
+            out.write(DataType.parseVarCharToByteArray("YES"));
+            out.write(DataType.parseVarCharToByteArray("YES"));
+          } else if (con instanceof NoConstraint) {
+            out.write(DataType.parseVarCharToByteArray("NULL"));
+            out.write(DataType.parseVarCharToByteArray("NULL"));
+          }
+          // ----------------------
+          return out.toByteArray();
+        } catch (IOException e) {
+          DBExceptions.newError(e);
+          return null;
+        }
+      }
+
+      /**
+       * Read in one Column byte array from COLUMNS and convert to a Column Object. This function is
+       * not relaying on the definition of COLUMNS table.
+       * <p>
+       * If the definition is updated, this function need to be updated as well.
+       * <p>
+       * If a column is the primary key, the not null attribute for this column is "YES" as well.
+       * </p>
+       *
+       * @param schema
+       * @param table
+       * @param bb
+       * @return {@code null} if the schema and table name are not matched, else a new
+       *         {@link Column} object is returned.
+       */
+
+      public static InfoColumn parseFromByteBuffer(ByteBuffer bb) {
+        // Read in one Column byte array.
+        String schemaName = DataType.parseVarCharFromByteBuffer(bb);
+        String tableName = DataType.parseVarCharFromByteBuffer(bb);
+        String columnName = DataType.parseVarCharFromByteBuffer(bb);
+        int ordinalPosi = DataType.parseByteFromByteBuffer(bb);
+        String dataTypeArg = DataType.parseVarCharFromByteBuffer(bb);
+        String notNullArg = DataType.parseVarCharFromByteBuffer(bb);
+        String primaryArg = DataType.parseVarCharFromByteBuffer(bb);
+        // ----------------------
+        // parse the constraint
+        Constraint con = null;
+        if (notNullArg == null && primaryArg == null) {
+          con = Constraint.supports("");
+        } else if (notNullArg.equals("YES") && primaryArg == null) {
+          con = Constraint.supports("NOT NULL");
+        } else if (notNullArg.equals("YES") && primaryArg.equals("YES")) {
+          con = Constraint.supports("PRIMARY KEY");
+        } else {
+          DBExceptions.newError("No constraint is found");
+        }
+        return new InfoColumn(schemaName, tableName,
+            new Column(columnName, DataType.supports(dataTypeArg), con, ordinalPosi));
+      }
+
+    }
+
 
     private static class InfoTable {
       public String schema;

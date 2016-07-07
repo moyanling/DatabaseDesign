@@ -30,12 +30,6 @@ public abstract class TblUtils {
 
   /**
    * Parse the String form record into byte array and append the bytes to the end of the tbl file.
-   * <br>
-   * An active byte value if the operating schema is not INFORMATION_SCHEMA. If it's 1, it means the
-   * value is active, otherwise it's considered as deleted and should be excluded from all the
-   * queries.
-   *
-   * // TODO prepend a active byte only when it's not INFORMATION_SCHEMA
    *
    * @param t
    * @param schema
@@ -55,14 +49,10 @@ public abstract class TblUtils {
     try {
       for (String record : t) {
         valueArray = record.split(",");
-        if (!schema.equals(InfoSchema.getInfoSchema())) {
-          // This is the active byte value at the beginning of each record.
-          byteMaker.write(1);
-        }
         /**
          * When a new record is appended to DB, it is separated into several value. Each value
          * matches a Column object. When each value is parsed to byte array and written to DB, the
-         * corrsponding ndx file for this column will be updated.
+         * corresponding ndx file for this column will be updated.
          * <p>
          * The Column should be updated before write a whole record to the tbl file.
          */
@@ -84,60 +74,6 @@ public abstract class TblUtils {
       if (!schema.equals(InfoSchema.getInfoSchema())) {
         InfoSchemaUtils.UpdateInfoSchema.atAppendingRecords(schema, table, rows);
       }
-    } catch (Exception e) {
-      DBExceptions.newError(e);
-    }
-  }
-
-  /**
-   * Remove records from specified table.
-   *
-   * @param currentSchema
-   * @param table
-   * @param whereClause
-   * @return
-   * @throws DBExceptions
-   */
-  public static void deleteFromDB(String schema, String table, String whereClause)
-      throws IOException, DBExceptions {
-    checkArgument(schema != null && table != null && whereClause != null);
-    // ----------------------
-    File file = FileUtils.tblRef(schema, table);
-    // No columnName and value specified
-    if (whereClause.equals("")) {
-      // TODO
-      InfoSchemaUtils.UpdateInfoSchema.atDeletingAllRecords(schema, table);
-      return;
-    }
-    // Find record according to index file
-    try {
-      // ----------------------
-      byte[] fileContent = Files.toByteArray(file);
-      ByteBuffer bb = ByteBuffer.wrap(fileContent);
-      List<Column> cols = FileUtils.getColumnList(schema, table);
-      // Extract column name and value
-      Pattern p = Pattern.compile("WHERE(.*)=(.*)", Pattern.CASE_INSENSITIVE);
-      Matcher m = p.matcher(whereClause);
-      m.matches();
-      String columnName = m.group(1).trim();
-      String value = m.group(2).trim();
-      // Get Column according to the columnName
-      Column column = null;
-      for (Column col : cols) {
-        if (col.getName().equalsIgnoreCase(columnName)) {
-          column = col;
-          break;
-        }
-      }
-      if (column == null) {
-        throw new ColumnNameNotFoundException("'" + columnName + "' is not found.");
-      }
-      // ----------------------
-      List<NdxUtils.Ndx> ndxList = NdxUtils.getNdxList(schema, table, column);
-      NdxUtils.Ndx ndx = NdxUtils.findNdx(column, value, ndxList);
-      // TODO
-    } catch (DBExceptions e) {
-      throw e;
     } catch (Exception e) {
       DBExceptions.newError(e);
     }

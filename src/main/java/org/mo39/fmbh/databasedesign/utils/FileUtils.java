@@ -121,8 +121,19 @@ public abstract class FileUtils {
    * @return true if delete successfully else false.
    */
   public static boolean deleteTable(String schema, String table) {
+    // Delete ndx files
+    File[] files = Paths.get(ARCHIVE_ROOT, schema).toFile().listFiles();
+    for (File f : files) {
+      if (f.getName().matches(table + "\\..*?\\.ndx")) {
+        if (!f.delete()) {
+          return false;
+        }
+      }
+    }
+    // Delete tbl file.
     if (tblRef(schema, table).delete()) {
       InfoSchemaUtils.UpdateInfoSchema.atDroppingTable(schema, table);
+      return true;
     }
     return false;
   }
@@ -135,13 +146,15 @@ public abstract class FileUtils {
    */
   public static boolean deleteSchema(String schema) {
     checkArgument(schema != null);
-    for (String tblFileName : gettblFileList(schema)) {
-      if (!tblRef(schema, tblFileName).delete()) {
+    File[] files = Paths.get(ARCHIVE_ROOT, schema).toFile().listFiles();
+    for (File f : files) {
+      if (!f.delete()) {
         return false;
       }
     }
     if (Paths.get(ARCHIVE_ROOT, schema).toFile().delete()) {
       InfoSchemaUtils.UpdateInfoSchema.atDeletingSchema(schema);
+      return true;
     }
     return false;
 

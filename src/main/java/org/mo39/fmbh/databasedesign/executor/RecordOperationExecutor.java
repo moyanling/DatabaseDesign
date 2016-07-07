@@ -59,6 +59,7 @@ public abstract class RecordOperationExecutor {
 
     private String endMessage;
     private String lineBreak = SystemProperties.get("lineBreak");
+    private String tab = SystemProperties.get("tab");
     private static Pattern regex =
         Pattern.compile("^SELECT\\s+(.*?)\\s+FROM\\s+(.*?)(\\s*?|\\s+WHERE\\s(.*=.*))\\;$",
             Pattern.CASE_INSENSITIVE);
@@ -98,49 +99,16 @@ public abstract class RecordOperationExecutor {
         DBExceptions.newError(e);
       }
       StringBuilder sb = new StringBuilder("Result: " + lineBreak);
-      for (Object result : resultSet) {
-        sb.append(SystemProperties.get("tab") + BeanUtils.beanToString(beanClass.cast(result))
-            + lineBreak);
+      if (resultSet.size() == 0) {
+        sb.append(tab + "None  ");
+      } else {
+        for (Object result : resultSet) {
+          sb.append(tab + BeanUtils.beanToString(beanClass.cast(result)) + lineBreak);
+        }
       }
       endMessage = sb.substring(0, sb.length() - 1);
     }
   }
-
-  public static class Delete implements Executable, Viewable {
-
-    private String endMessage;
-    private static Pattern regex = Pattern.compile(
-        "^DELETE\\s+FROM\\s+(.*?)(\\s*?|\\s+WHERE\\s(.*=.*))\\;$", Pattern.CASE_INSENSITIVE);
-
-    @Override
-    public String getView() {
-      return endMessage;
-    }
-
-    @Override
-    public void execute() throws DBExceptions, IOException {
-      String cmd = Status.getCurrentCmdStr();
-      Matcher m = regex.matcher(cmd);
-      if (!m.matches()) {
-        throw new BadUsageException("DELETE syntax not match.");
-      }
-      // ----------------------
-      String table = m.group(1);
-      if (!NamingUtils.checkNamingConventions(table)) {
-        throw new BadUsageException("Bad table name");
-      }
-      // ----------------------
-      String whereClause = m.group(2).trim();
-      try {
-        TblUtils.deleteFromDB(Status.getCurrentSchema(), table, whereClause);
-      } catch (IOException e) {
-        DBExceptions.newError(e);
-      }
-      endMessage = "Records deleted.";
-    }
-
-  }
-
 
 
 }

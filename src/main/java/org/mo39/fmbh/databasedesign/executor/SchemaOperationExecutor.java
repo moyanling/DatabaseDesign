@@ -39,7 +39,7 @@ public abstract class SchemaOperationExecutor {
       String currentSchema = Status.getCurrentSchema();
       StringBuilder sb = new StringBuilder("Show Schemas: ");
       if (schemaSet.size() == 0) {
-        sb.append(lineBreak + tab + "None");
+        sb.append(lineBreak + tab + "None  ");
       } else {
         for (String schema : schemaSet) {
           sb.append(lineBreak + tab + schema + lineBreak);
@@ -106,7 +106,7 @@ public abstract class SchemaOperationExecutor {
     public void execute() throws DBExceptions, IOException {
       String schema = NamingUtils.extractAndCheckName(Status.getCurrentCmdStr(), REGEX, 1);
       if (schema == null) {
-        throw new BadUsageException();
+        throw new BadUsageException("Bad schema name");
       }
       if (InfoSchema.getInfoSchema().equals(schema)) {
         throw new BadUsageException("Schema - '" + InfoSchema.getInfoSchema()
@@ -150,7 +150,7 @@ public abstract class SchemaOperationExecutor {
     public void execute() throws DBExceptions {
       String schema = NamingUtils.extractAndCheckName(Status.getCurrentCmdStr(), REGEX, 1);
       if (schema == null) {
-        throw new BadUsageException();
+        throw new BadUsageException("Bad schema name");
       }
       Set<String> schemaSet = FileUtils.getSchemaSet();
       if (schemaSet.contains(schema)) {
