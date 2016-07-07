@@ -14,20 +14,20 @@ Supported commands: <br>
 		&emsp;&emsp;- Displays all schemas defined in your database.<br>
 	&emsp;DELETE SCHEMA; <br>
 		&emsp;&emsp;- Remove the current activated schema from the archive, and all of its containing tables. Use it carefully.<br>
-	&emsp;USE <SCHEMA_NAME>; <br>
+	&emsp;USE &lt;SCHEMA_NAME&gt;; <br>
 		&emsp;&emsp;- Chooses a schema.<br>
-	&emsp;CREATE SCHEMA <SCHEMA_NAME>; <br>
+	&emsp;CREATE SCHEMA &lt;SCHEMA_NAME&gt;; <br>
 		&emsp;&emsp;- Creates a new schema to hold tables.<br>
 	&emsp;SHOW TABLES; <br>
 		&emsp;&emsp;- Displays all tables in the currently chosen schema.<br>
-	&emsp;DROP TABLE <TABLE_NAME>; <br>
+	&emsp;DROP TABLE &lt;TABLE_NAME&gt;; <br>
 		&emsp;&emsp;- Remove a table in current schema, and all of its contained data.<br>
-	&emsp;CREATE TABLE <TABLE_NAME> (...); <br>
+	&emsp;CREATE TABLE &lt;TABLE_NAME> (...); <br>
 		&emsp;&emsp;- Creates a new table schema, i.e. a new empty table.<br>
 	&emsp;INSERT INTO TABLE ... ; <br>
 		&emsp;&emsp;- Inserts a row/record into a table.<br>
 	&emsp;SELECT ... ; <br>
-		&emsp;&emsp;- SELECT <FULL-QUALIFIED-JAVA-BEAN-CLASS-NAME> FROM-WHERE style query. This will match the columns to bean properties.<br>
+		&emsp;&emsp;- SELECT &lt;FULL-QUALIFIED-JAVA-BEAN-CLASS-NAME&gt; FROM-WHERE style query. This will match the columns to bean properties.<br>
 	&emsp;EXIT; <br>
 		&emsp;&emsp;- Cleanly exits the program and saves all table and index information in non-volatile files.<br>
 <br>
