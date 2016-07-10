@@ -1,4 +1,9 @@
 # DatabaseDesign
+<br>This branch will update the read and write function using RandomAccessFile and FileChannel
+<br>Ref: http://blog.csdn.net/akon_vm/article/details/7429245
+<br>After this, a file lock will be implemented to make the database functional in a multi-thread env
+<br>Ref: http://blog.csdn.net/wangbaochu/article/details/48546717
+<br>
 <br>A command line based simple database.
 <br>
 <br>--help or -h:
