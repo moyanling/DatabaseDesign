@@ -8,8 +8,8 @@ import java.util.NoSuchElementException;
 
 import org.mo39.fmbh.databasedesign.model.DBExceptions.AddRecordException;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.ConstraintViolationException;
-import org.mo39.fmbh.databasedesign.utils.FileUtils;
-import org.mo39.fmbh.databasedesign.utils.TblUtils;
+import org.mo39.fmbh.databasedesign.utils.IOUtils;
+import org.mo39.fmbh.databasedesign.utils.InfoSchemaUtils;
 
 import com.google.common.collect.Lists;
 
@@ -33,7 +33,7 @@ public class Table implements Iterable<String> {
    * @return
    */
   public static Table init(String schema, String table) {
-    return new Table(schema, table, FileUtils.getColumnList(schema, table));
+    return new Table(schema, table, InfoSchemaUtils.getColumns(schema, table));
   }
 
   /**
@@ -76,7 +76,7 @@ public class Table implements Iterable<String> {
 
   /**
    * Return the number of records.
-   * 
+   *
    * @return
    */
   public int size() {
@@ -93,13 +93,21 @@ public class Table implements Iterable<String> {
     return records.remove(0);
   }
 
+  public String getSchema() {
+    return schema;
+  }
+
+  public String getTable() {
+    return table;
+  }
+
   /**
    * Write all records to DB. Then all the records in this Table object is cleared.
-   * 
+   *
    * @throws IOException
    */
   public void writeToDB() throws IOException {
-    TblUtils.appendRecordsToDB(this, schema, table);
+    IOUtils.appendRecordsToDB(this);
   }
 
   /**

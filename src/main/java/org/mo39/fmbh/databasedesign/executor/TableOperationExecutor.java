@@ -13,8 +13,8 @@ import org.mo39.fmbh.databasedesign.framework.View.Viewable;
 import org.mo39.fmbh.databasedesign.model.Column;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
-import org.mo39.fmbh.databasedesign.utils.FileUtils;
-import org.mo39.fmbh.databasedesign.utils.NamingUtils;
+import org.mo39.fmbh.databasedesign.utils.IOUtils;
+import org.mo39.fmbh.databasedesign.utils.InfoSchemaUtils;
 
 import com.google.common.collect.Lists;
 
@@ -44,10 +44,9 @@ public abstract class TableOperationExecutor {
     }
 
     @Override
-    @IsReadOnly
     @RequiresActiveSchema
     public void execute() {
-      Set<String> tableSet = FileUtils.getTableSet(Status.getCurrentSchema());
+      Set<String> tableSet = InfoSchemaUtils.getTables(Status.getCurrentSchema());
       StringBuilder sb = new StringBuilder("Show Tables: ");
       if (tableSet.size() == 0) {
         sb.append(lineBreak + tab + "None  ");
@@ -70,8 +69,8 @@ public abstract class TableOperationExecutor {
   public static class DropTable implements Executable, Viewable {
 
     private String endMessage;
-    private static final String REGEX = "^DROP\\s*?TABLE\\s(.*?)\\;$";
-
+    private Matcher m = Pattern.compile("^DROP\\s*?TABLE\\s(.*?)\\;$", Pattern.CASE_INSENSITIVE)
+        .matcher(Status.getCurrentCmdStr());
 
     @Override
     public String getView() {
@@ -81,16 +80,17 @@ public abstract class TableOperationExecutor {
     @Override
     @RequiresActiveSchema
     public void execute() throws DBExceptions {
-      String table = NamingUtils.extractAndCheckName(Status.getCurrentCmdStr(), REGEX, 1);
-      if (table == null) {
-        throw new BadUsageException();
+      m.matches();
+      String table = m.group(1);
+      if (IOUtils.checkNamingConventions(table)) {
+        throw new BadUsageException("Bad table name: " + table);
       }
       String schema = Status.getCurrentSchema();
-      Set<String> tableSet = FileUtils.getTableSet(schema);
+      Set<String> tableSet = InfoSchemaUtils.getTables(schema);
       if (!tableSet.contains(table)) {
         throw new BadUsageException("The table does not exist in schema - '" + schema + "'.");
       }
-      if (FileUtils.deleteTable(schema, table)) {
+      if (IOUtils.deleteTable(schema, table)) {
         endMessage = "Table - '" + table + "' in schema -'" + schema + "' is deleted.";
       } else {
         endMessage = "Fails to delete Table - '" + table + "' in schema - '" + schema + "'";
@@ -107,7 +107,9 @@ public abstract class TableOperationExecutor {
    */
   public static class CreateTable implements Executable, Viewable {
 
-    private static final String REGEX = "^CREATE\\s*?TABLE\\s(.*?)\\s\\((.*)\\)\\s*?\\;$";
+    private Matcher m =
+        Pattern.compile("^CREATE\\s*?TABLE\\s(.*?)\\s\\((.*)\\)\\s*?\\;$", Pattern.CASE_INSENSITIVE)
+            .matcher(Status.getCurrentCmdStr());
 
     private String endMessage;
 
@@ -120,23 +122,21 @@ public abstract class TableOperationExecutor {
     @RequiresActiveSchema
     public void execute() throws DBExceptions, IOException {
       List<Column> columns = Lists.newArrayList();
-      Matcher matcher =
-          Pattern.compile(REGEX, Pattern.CASE_INSENSITIVE).matcher(Status.getCurrentCmdStr());
-      if (!matcher.matches()) {
+      if (!m.matches()) {
         throw new BadUsageException("No table or column definition is found.");
       }
-      String table = matcher.group(1);
-      String content = matcher.group(2);
-      if (!NamingUtils.checkNamingConventions(table)) {
+      String table = m.group(1);
+      String content = m.group(2);
+      if (!IOUtils.checkNamingConventions(table)) {
         throw new BadUsageException("Bad table name.");
       }
       columns = Column.newColumnDefinition(content);
       String schema = Status.getCurrentSchema();
-      if (FileUtils.getTableSet(schema).contains(table)) {
+      if (InfoSchemaUtils.getTables(schema).contains(table)) {
         endMessage = "Table - '" + table + "' already exists.";
         return;
       }
-      if (FileUtils.createtblFile(schema, table, columns)) {
+      if (IOUtils.createtblFile(schema, table, columns)) {
         endMessage = "Table - '" + table + "' is Created.";
       } else {
         endMessage = "Fails to create Table - '" + table + "'.";

@@ -10,7 +10,7 @@ import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.DuplicatePrimaryKeyException;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.UnrecognizableConstraintException;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.UnrecognizableDataTypeException;
-import org.mo39.fmbh.databasedesign.utils.NamingUtils;
+import org.mo39.fmbh.databasedesign.utils.IOUtils;
 
 import com.google.common.collect.Lists;
 
@@ -56,7 +56,7 @@ public class Column implements Comparable<Column> {
         }
         // ----------------------
         String columnName = matcher.group(1).trim();
-        if (!NamingUtils.checkNamingConventions(columnName)) {
+        if (!IOUtils.checkNamingConventions(columnName)) {
           throw new BadUsageException("Bad column name: " + columnName);
         }
         // ----------------------

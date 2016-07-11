@@ -23,7 +23,6 @@ public class ExitDatabase implements Executable, Viewable {
   }
 
   @Override
-  @IsReadOnly
   public void execute() throws DBExceptions {
     cmdStr = Status.getCurrentCmdStr();
 

@@ -13,15 +13,24 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.mo39.fmbh.databasedesign.executor.Executable;
+import org.mo39.fmbh.databasedesign.executor.Executable.IsReadOnly;
 import org.mo39.fmbh.databasedesign.executor.Executable.RequiresActiveSchema;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
 import org.mo39.fmbh.databasedesign.model.Cmd;
 import org.mo39.fmbh.databasedesign.model.Constraint;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
 import org.mo39.fmbh.databasedesign.model.DataType;
+import org.mo39.fmbh.databasedesign.utils.DBLocker;
+import org.mo39.fmbh.databasedesign.utils.InfoSchemaUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+/**
+ * Core framework of database design.
+ *
+ * @author Jihan Cehn
+ *
+ */
 public class DatabaseDesign {
 
   /**
@@ -38,22 +47,29 @@ public class DatabaseDesign {
     DataType.setDataTypeList((List<DataType>) ctx.getBean("supportedDataTypeList"));
     Constraint.setConstraintList((List<Constraint>) ctx.getBean("supportedConstraintList"));
     SystemProperties.setSystemProperties((Map<String, String>) ctx.getBean("systemProperties"));
+    InfoSchemaUtils.initInfoSchema();
+    InfoSchemaUtils.validate();
   }
 
   private static Scanner scan = new Scanner(System.in);
 
   /**
-   * Run command. The method would set the current cmd in Status to the input cmd.
+   * Run command. The method would set the current cmd in Status to the input cmd arg.
    * <p>
-   * The method provides several features:<br>
-   * &emsp;- pre-execution check<br>
+   * The method provides several features: <br>
+   * &emsp;- pre-execution check <br>
    * &emsp;- view result according to Viewable interface (if implemented) right after the execution
-   * finishes<br>
+   * finishes <br>
    * &emsp;- catch certain DBExceptions, display the message and consider the execution a failure
-   * (in which case the Viewable result will not be displayed).<br>
-   *
+   * (in which case the Viewable result will not be displayed).
+   * <p>
+   * During the execution, if the execute method is not annotated as a read only method, the whole
+   * database is locked and can be read but cannot be modified by other threads. Following classes
+   * would have a thread local copy to support concurrent access: <br>
+   * &emsp;- {@link Status}
    */
   public void runCmd(Cmd cmd) {
+    DBLocker lock = new DBLocker();
     Status.setCurrentCmd(cmd);
     try {
       Class<?> klass = Class.forName(cmd.getExecutorClassName());
@@ -62,13 +78,21 @@ public class DatabaseDesign {
         Executable executor = Executable.class.cast(klass.newInstance());
         Method method = executor.getClass().getMethod("execute");
         // ----------------------
-        if (checkAnnotation(method)) {
-          method.invoke(executor);
-          if (executor instanceof Viewable) {
-            View.newView(Viewable.class.cast(executor));
+        if (method.getAnnotation(RequiresActiveSchema.class) != null) {
+          if (!Status.hasActiveSchema()) {
+            View.newView("Illegal state. No active schema is found");
           }
-          InfoSchema.validate();
         }
+        // ----------------------
+        if (method.getAnnotation(IsReadOnly.class) != null) {
+          lock.acquireLock();
+        }
+        // ----------------------
+        method.invoke(executor);
+        if (executor instanceof Viewable) {
+          View.newView(Viewable.class.cast(executor));
+        }
+        InfoSchemaUtils.validate();
       }
     } catch (InvocationTargetException e) {
       Throwable ex;
@@ -82,6 +106,7 @@ public class DatabaseDesign {
     } catch (Exception e) {
       DBExceptions.newError(e);
     } finally {
+      lock.releaseLock();
       Status.endRunCmd();
     }
   }
@@ -140,20 +165,8 @@ public class DatabaseDesign {
     }
   }
 
-  private static boolean checkAnnotation(Method method) {
-    if (method.getAnnotation(RequiresActiveSchema.class) != null) {
-      if (!Status.hasActiveSchema()) {
-        View.newView("Illegal state. No active schema is found");
-        return false;
-      }
-    }
-    return true;
-  }
-
   public static void main(String[] args) {
     DatabaseDesign dbDesign = new DatabaseDesign();
-    InfoSchema.init();
-    // InfoSchema.validate();
     // ----------------------
     Options opts = new Options();
     CommandLineParser parser = new DefaultParser();

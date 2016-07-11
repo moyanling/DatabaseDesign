@@ -9,7 +9,6 @@ import java.lang.annotation.Target;
 import org.mo39.fmbh.databasedesign.framework.DatabaseDesign;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
-import org.mo39.fmbh.databasedesign.utils.NamingUtils;
 
 
 /**
@@ -67,7 +66,6 @@ public interface Executable {
   }
 
   /**
-   * //TODO Not implemented yet. Maybe useful for operating in a multi-threads env.<br>
    * This annotation indicates whether the execute method is read only to database, i.e archive. If
    * this annotation is not provided, the execute method would operate in a thread-safe manner. If
    * the method is read-only, multi read-only access can happen concurrently. Use this annotation on

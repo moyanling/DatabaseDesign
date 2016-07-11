@@ -31,15 +31,16 @@
 		<entry key="lineBreak" value="${sys.lineBreak}" />
 	</util:map>
 	
-	<bean id="infoSchema" class="org.mo39.fmbh.databasedesign.framework.InfoSchema">
+	<bean id="infoSchema" class="org.mo39.fmbh.databasedesign.model.InfoSchema">
 		<property name="archiveRoot" value="${archive.root}"/>
 		<property name="infoSchema" value="${archive.infoSchema}"/>
 		<property name="schemata" value="${archive.schemata}"/>
 		<property name="tables" value="${archive.tables}"/>
-		<property name="columns" value="${archive.columns}"/>		
+		<property name="columns" value="${archive.columns}"/>
+		<property name="fileLock" value="${archive.fileLock}"/>		
 		<property name="createSchemata" value="${create.schemata}"/>
 		<property name="createTables" value="${create.tables}"/>
-		<property name="createColumns" value="${create.columns}"/>		
+		<property name="createColumns" value="${create.columns}"/>			
 		<property name="schemataValues">
 			<list>
 				<value>${schemata.value.1}</value>

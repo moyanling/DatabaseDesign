@@ -13,17 +13,17 @@ import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.ClassNotFound;
 import org.mo39.fmbh.databasedesign.model.Table;
 import org.mo39.fmbh.databasedesign.utils.BeanUtils;
-import org.mo39.fmbh.databasedesign.utils.FileUtils;
-import org.mo39.fmbh.databasedesign.utils.NamingUtils;
-import org.mo39.fmbh.databasedesign.utils.TblUtils;
+import org.mo39.fmbh.databasedesign.utils.IOUtils;
+import org.mo39.fmbh.databasedesign.utils.InfoSchemaUtils;
 
 public abstract class RecordOperationExecutor {
 
   public static class InsertIntoTable implements Executable, Viewable {
 
     private String endMessage;
-    private static final String REGEX =
-        "^INSERT\\s+INTO\\s+TABLE\\s+(.*?)\\s+VALUES\\s+\\((.*?)\\)\\s*\\;$";
+    private Matcher m =
+        Pattern.compile("^INSERT\\s+INTO\\s+TABLE\\s+(.*?)\\s+VALUES\\s+\\((.*?)\\)\\s*\\;$",
+            Pattern.CASE_INSENSITIVE).matcher(Status.getCurrentCmdStr());;
 
     @Override
     public String getView() {
@@ -33,19 +33,16 @@ public abstract class RecordOperationExecutor {
     @Override
     @RequiresActiveSchema
     public void execute() throws DBExceptions, IOException {
-      String cmd = Status.getCurrentCmdStr();
       String schema = Status.getCurrentSchema();
-      Pattern p = Pattern.compile(REGEX, Pattern.CASE_INSENSITIVE);
-      Matcher matcher = p.matcher(cmd);
-      if (!matcher.matches()) {
+      if (!m.matches()) {
         throw new BadUsageException("Bad insertion command");
       }
-      String table = matcher.group(1);
-      String values = matcher.group(2);
-      if (!NamingUtils.checkNamingConventions(table)) {
+      String table = m.group(1);
+      String values = m.group(2);
+      if (!IOUtils.checkNamingConventions(table)) {
         throw new BadUsageException("Bad table name: " + table);
       }
-      if (!FileUtils.getTableSet(schema).contains(table)) {
+      if (!InfoSchemaUtils.getTables(schema).contains(table)) {
         throw new BadUsageException("Table not found in current schema");
       }
       Table t = Table.init(schema, table);
@@ -60,9 +57,9 @@ public abstract class RecordOperationExecutor {
     private String endMessage;
     private String lineBreak = SystemProperties.get("lineBreak");
     private String tab = SystemProperties.get("tab");
-    private static Pattern regex =
+    private Matcher m =
         Pattern.compile("^SELECT\\s+(.*?)\\s+FROM\\s+(.*?)(\\s*?|\\s+WHERE\\s(.*=.*))\\;$",
-            Pattern.CASE_INSENSITIVE);
+            Pattern.CASE_INSENSITIVE).matcher(Status.getCurrentCmdStr());
 
     @Override
     public String getView() {
@@ -70,10 +67,9 @@ public abstract class RecordOperationExecutor {
     }
 
     @Override
+    @IsReadOnly
     @RequiresActiveSchema
     public void execute() throws DBExceptions {
-      String cmd = Status.getCurrentCmdStr();
-      Matcher m = regex.matcher(cmd);
       if (!m.matches()) {
         throw new BadUsageException("SELECT syntax not match.");
       }
@@ -87,14 +83,14 @@ public abstract class RecordOperationExecutor {
       }
       // ----------------------
       String table = m.group(2);
-      if (!NamingUtils.checkNamingConventions(table)) {
+      if (!IOUtils.checkNamingConventions(table)) {
         throw new BadUsageException("Bad table name");
       }
       // ----------------------
       String whereClause = m.group(3).trim();
       List<Object> resultSet = null;
       try {
-        resultSet = TblUtils.selectFromDB(Status.getCurrentSchema(), table, beanClass, whereClause);
+        resultSet = IOUtils.selectFromDB(Status.getCurrentSchema(), table, beanClass, whereClause);
       } catch (IOException e) {
         DBExceptions.newError(e);
       }

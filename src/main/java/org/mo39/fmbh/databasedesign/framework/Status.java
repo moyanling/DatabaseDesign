@@ -13,41 +13,46 @@ public class Status {
 
   private Status() {}
 
-  private static Cmd currentCmd;
-  private static String currentSchema;
+  private Cmd currentCmd;
+  private String currentSchema;
 
   public static String getCurrentCmdStr() {
-    return Status.currentCmd.getCmdStr();
+    return holder.get().currentCmd.getCmdStr();
   }
 
   public static boolean hasActiveSchema() {
-    return currentSchema != null;
+    return holder.get().currentSchema != null;
   }
 
   public static Cmd getCurrentCmd() {
-    return currentCmd;
+    return holder.get().currentCmd;
   }
 
   public static void setCurrentCmd(Cmd currentCmd) {
-    Status.currentCmd = currentCmd;
+    holder.get().currentCmd = currentCmd;
   }
 
   public static String getCurrentSchema() {
-    return currentSchema;
+    return holder.get().currentSchema;
   }
 
   public static void setCurrentSchema(String currentSchema) {
-    Status.currentSchema = currentSchema;
+    holder.get().currentSchema = currentSchema;
   }
+
+  private static ThreadLocal<Status> holder = ThreadLocal.<Status>withInitial(() -> {
+    return new Status();
+  });
+
 
   // ------------------------------- protected -------------------------------
 
   /**
    * When the command run is finished, the currentCmd field is set back to null. This is called only
-   * in framework.SupportedCmds after the execution of cmd.
+   * after the execution of cmd.
    */
   protected static void endRunCmd() {
-    currentCmd = null;
+    holder.get().currentCmd = null;
   }
 
 }

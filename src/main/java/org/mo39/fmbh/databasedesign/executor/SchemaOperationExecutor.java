@@ -2,15 +2,16 @@ package org.mo39.fmbh.databasedesign.executor;
 
 import java.io.IOException;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import org.mo39.fmbh.databasedesign.framework.InfoSchema;
 import org.mo39.fmbh.databasedesign.framework.Status;
 import org.mo39.fmbh.databasedesign.framework.SystemProperties;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
-import org.mo39.fmbh.databasedesign.utils.FileUtils;
-import org.mo39.fmbh.databasedesign.utils.NamingUtils;
+import org.mo39.fmbh.databasedesign.utils.IOUtils;
+import org.mo39.fmbh.databasedesign.utils.InfoSchemaUtils;
 
 /**
  * A abstract class that collects schema operations.
@@ -35,7 +36,7 @@ public abstract class SchemaOperationExecutor {
     @Override
     @IsReadOnly
     public void execute() {
-      Set<String> schemaSet = FileUtils.getSchemaSet();
+      Set<String> schemaSet = InfoSchemaUtils.getSchemas();
       String currentSchema = Status.getCurrentSchema();
       StringBuilder sb = new StringBuilder("Show Schemas: ");
       if (schemaSet.size() == 0) {
@@ -65,23 +66,23 @@ public abstract class SchemaOperationExecutor {
   public static class Use implements Executable, Viewable {
 
     private String endMessage;
-
-    private static final String REGEX = "^USE\\s(.*?)\\;$";
+    private Matcher m = Pattern.compile("^USE\\s(.*?)\\;$", Pattern.CASE_INSENSITIVE)
+        .matcher(Status.getCurrentCmdStr());
 
     @Override
     @IsReadOnly
     public void execute() throws DBExceptions {
-      String schema = NamingUtils.extractAndCheckName(Status.getCurrentCmdStr(), REGEX, 1);
-      if (schema != null) {
-        Set<String> schemaSet = FileUtils.getSchemaSet();
-        if (schemaSet.contains(schema)) {
-          Status.setCurrentSchema(schema);
-          endMessage = "Schema - '" + schema + "' is activated.";
-        } else {
-          endMessage = "Schema - '" + schema + "' is not found in the archive.";
-        }
+      m.matches();
+      String schema = m.group(1);
+      if (!IOUtils.checkNamingConventions(schema)) {
+        throw new BadUsageException("Bad schema name: " + schema);
+      }
+      Set<String> schemaSet = InfoSchemaUtils.getSchemas();
+      if (schemaSet.contains(schema)) {
+        Status.setCurrentSchema(schema);
+        endMessage = "Schema - '" + schema + "' is activated.";
       } else {
-        throw new BadUsageException("Bad schema name.");
+        endMessage = "Schema - '" + schema + "' is not found in the archive.";
       }
     }
 
@@ -100,23 +101,25 @@ public abstract class SchemaOperationExecutor {
   public static class CreateSchema implements Executable, Viewable {
 
     private String endMessage;
-    private static final String REGEX = "^CREATE\\s*?SCHEMA\\s(.*?)\\;$";
+    private Matcher m = Pattern.compile("^CREATE\\s*?SCHEMA\\s(.*?)\\;$", Pattern.CASE_INSENSITIVE)
+        .matcher(Status.getCurrentCmdStr());
 
     @Override
     public void execute() throws DBExceptions, IOException {
-      String schema = NamingUtils.extractAndCheckName(Status.getCurrentCmdStr(), REGEX, 1);
-      if (schema == null) {
-        throw new BadUsageException("Bad schema name");
+      m.matches();
+      String schema = m.group(1);
+      if (!IOUtils.checkNamingConventions(schema)) {
+        throw new BadUsageException("Bad schema name: " + schema);
       }
-      if (InfoSchema.getInfoSchema().equals(schema)) {
-        throw new BadUsageException("Schema - '" + InfoSchema.getInfoSchema()
-            + "' is resevered. Please use others instead.");
+      if (InfoSchemaUtils.isReserved(schema)) {
+        throw new BadUsageException(
+            "Schema - '" + schema + "' is resevered. Please use others instead.");
       }
-      if (FileUtils.getSchemaSet().contains(schema)) {
+      if (InfoSchemaUtils.getSchemas().contains(schema)) {
         endMessage = "Schema - '" + schema + "' already exists.";
         return;
       }
-      if (FileUtils.createSchema(schema)) {
+      if (IOUtils.createSchema(schema)) {
         endMessage = "Schema - '" + schema + "' is created.";
       } else {
         endMessage = "Fails to create Schema - '" + schema + "'.";
@@ -138,7 +141,8 @@ public abstract class SchemaOperationExecutor {
   public static class DeleteSchema implements Executable, Viewable {
 
     private String endMessage;
-    private static final String REGEX = "^DELETE\\s*?SCHEMA\\s(.*?)\\;$";
+    private Matcher m = Pattern.compile("^DELETE\\s*?SCHEMA\\s(.*?)\\;$", Pattern.CASE_INSENSITIVE)
+        .matcher(Status.getCurrentCmdStr());
 
 
     @Override
@@ -148,13 +152,14 @@ public abstract class SchemaOperationExecutor {
 
     @Override
     public void execute() throws DBExceptions {
-      String schema = NamingUtils.extractAndCheckName(Status.getCurrentCmdStr(), REGEX, 1);
-      if (schema == null) {
-        throw new BadUsageException("Bad schema name");
+      m.matches();
+      String schema = m.group(1).trim();
+      if (!IOUtils.checkNamingConventions(schema)) {
+        throw new BadUsageException("Bad schema name: " + schema);
       }
-      Set<String> schemaSet = FileUtils.getSchemaSet();
+      Set<String> schemaSet = InfoSchemaUtils.getSchemas();
       if (schemaSet.contains(schema)) {
-        if (FileUtils.deleteSchema(schema)) {
+        if (IOUtils.deleteSchema(schema)) {
           if (schema.equals(Status.getCurrentSchema())) {
             Status.setCurrentSchema(null);
           }

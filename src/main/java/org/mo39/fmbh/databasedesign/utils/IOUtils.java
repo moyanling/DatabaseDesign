@@ -7,76 +7,74 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.mo39.fmbh.databasedesign.framework.DatabaseDesign;
-import org.mo39.fmbh.databasedesign.framework.InfoSchema;
 import org.mo39.fmbh.databasedesign.model.Column;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.ColumnNameNotFoundException;
 import org.mo39.fmbh.databasedesign.model.DataType;
+import org.mo39.fmbh.databasedesign.model.InfoSchema;
 import org.mo39.fmbh.databasedesign.model.Table;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteSink;
 import com.google.common.io.FileWriteMode;
 import com.google.common.io.Files;
 
-public abstract class TblUtils {
+/**
+ * IO utilization class. Provides methods to read and write to database.
+ *
+ * @author Jihan Chen
+ *
+ */
+public abstract class IOUtils {
+
+  private static final Pattern NAMING_CONVENTION =
+      Pattern.compile("^[a-zA-Z][a-zA-Z0-9\\_\\-]*?(?<!\\_)(?<!\\-)$");
 
   /**
-   * Parse the String form record into byte array and append the bytes to the end of the tbl file.
+   * This function uses a regular expression to check the input name. The name could be schema,
+   * table or column name. This should be used when the name is input by the user other than is read
+   * from the archive.
    *
-   * @param t
+   * @param name
+   * @return
+   */
+  public static final boolean checkNamingConventions(String name) {
+    Preconditions.checkArgument(name != null);
+    return NAMING_CONVENTION.matcher(name).matches();
+  }
+
+
+  /**
+   * Return a tbl file reference according to schema and table name.
+   *
    * @param schema
    * @param table
-   * @throws IOException
+   * @return
    */
-  public static void appendRecordsToDB(Table t, String schema, String table) throws IOException {
-    int rows = t.size();
-    File tbl = FileUtils.tblRef(schema, table);
-    ByteSink out = Files.asByteSink(tbl, FileWriteMode.APPEND);
-    ByteArrayOutputStream byteMaker = new ByteArrayOutputStream();
-    // Reusable references
-    Column col;
-    String value;
-    String[] valueArray;
-    // ----------------------
-    try {
-      for (String record : t) {
-        valueArray = record.split(",");
-        /**
-         * When a new record is appended to DB, it is separated into several value. Each value
-         * matches a Column object. When each value is parsed to byte array and written to DB, the
-         * corresponding ndx file for this column will be updated.
-         * <p>
-         * The Column should be updated before write a whole record to the tbl file.
-         */
-        for (int i = 0; i < valueArray.length; i++) {
-          value = valueArray[i].trim();
-          col = t.getColumns().get(i);
-          // parse the value for this column and write the value to DB
-          Method method =
-              DataType.class.getMethod(col.getDataType().getParseToByteArray(), String.class);
-          byteMaker.write((byte[]) method.invoke(null, value));
-          // ----------------------
-          NdxUtils.updateIndexAtAppendingColumn(schema, table, col, value,
-              (int) FileUtils.tblRef(schema, table).length());
-        }
-        out.write(byteMaker.toByteArray());
-        // Clear the old byte array
-        byteMaker.reset();
-      }
-      if (!schema.equals(InfoSchema.getInfoSchema())) {
-        InfoSchemaUtils.UpdateInfoSchema.atAppendingRecords(schema, table, rows);
-      }
-    } catch (Exception e) {
-      DBExceptions.newError(e);
-    }
+  public static final File tblRef(String schema, String table) {
+    checkArgument(schema != null && table != null);
+    return Paths.get(InfoSchema.getArchiveRoot(), schema, table + ".tbl").toFile();
+  }
+
+  /**
+   * Return a ndx file reference according to schema, table and column name.
+   *
+   * @param schema
+   * @param table
+   * @param column
+   * @return
+   */
+  public static final File ndxRef(String schema, String table, String column) {
+    checkArgument(schema != null && table != null && column != null);
+    return Paths.get(InfoSchema.getArchiveRoot(), schema, table + "." + column + ".ndx").toFile();
   }
 
   /**
@@ -94,10 +92,10 @@ public abstract class TblUtils {
       String whereClause) throws DBExceptions, IOException {
     checkArgument(schema != null && table != null && beanClass != null);
     // ----------------------
-    byte[] fileContent = Files.toByteArray(FileUtils.tblRef(schema, table));
+    byte[] fileContent = Files.toByteArray(tblRef(schema, table));
     ByteBuffer bb = ByteBuffer.wrap(fileContent);
     List<Object> toRet = Lists.newArrayList();
-    List<Column> cols = FileUtils.getColumnList(schema, table);
+    List<Column> cols = InfoSchemaUtils.getColumns(schema, table);
     // No columnName and value specified
     if (whereClause.equals("")) {
       while (bb.hasRemaining()) {
@@ -195,6 +193,148 @@ public abstract class TblUtils {
     }
   }
 
+  // --------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------
+  /**
+   * Create a new schema i. e.a folder to hold tables.**
+   *
+   * @param schema
+   * @throws IOException
+   */
+  public static boolean createSchema(String schema) throws IOException {
+    if (Paths.get(InfoSchema.getArchiveRoot(), schema).toFile().mkdirs()) {
+      InfoSchemaUtils.UpdateInfoSchema.atCreatingSchema(schema);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * This function will take schema as a folder and table as the tbl file name. Unless the schema is
+   * information_schema. Related ndx files are created at the same time.
+   *
+   * @param schema
+   * @param table
+   * @throws IOException
+   */
+  public static boolean createtblFile(String schema, String table, List<Column> columns)
+      throws IOException {
+    if (!tblRef(schema, table).createNewFile()) {
+      return false;
+    }
+    for (Column col : columns) {
+      if (!ndxRef(schema, table, col.getName()).createNewFile()) {
+        return false;
+      }
+    }
+    InfoSchemaUtils.UpdateInfoSchema.atCreatingTable(schema, table, columns);
+    return true;
+  }
+
+  /**
+   * Delete table in the archive
+   *
+   * @param schemaName
+   * @param tableName
+   * @return true if delete successfully else false.
+   */
+  public static boolean deleteTable(String schema, String table) {
+    // Delete ndx files
+    File[] files = Paths.get(InfoSchema.getArchiveRoot(), schema).toFile().listFiles();
+    for (File f : files) {
+      if (f.getName().matches(table + "\\..*?\\.ndx")) {
+        if (!f.delete()) {
+          return false;
+        }
+      }
+    }
+    // Delete tbl file.
+    if (tblRef(schema, table).delete()) {
+      InfoSchemaUtils.UpdateInfoSchema.atDroppingTable(schema, table);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Delete a schema in the archive.
+   *
+   * @param schemaName
+   * @return true if delete successfully else false.
+   */
+  public static boolean deleteSchema(String schema) {
+    checkArgument(schema != null);
+    File[] files = Paths.get(InfoSchema.getArchiveRoot(), schema).toFile().listFiles();
+    for (File f : files) {
+      if (!f.delete()) {
+        return false;
+      }
+    }
+    if (Paths.get(InfoSchema.getArchiveRoot(), schema).toFile().delete()) {
+      InfoSchemaUtils.UpdateInfoSchema.atDeletingSchema(schema);
+      return true;
+    }
+    return false;
+
+  }
+
+  /**
+   * Parse the String form record into byte array and append the bytes to the end of the tbl file.
+   *
+   * @param t
+   * @param schema
+   * @param table
+   * @throws IOException
+   */
+  public static void appendRecordsToDB(Table t) throws IOException {
+    int rows = t.size();
+    String schema = t.getSchema();
+    String table = t.getTable();
+    File tbl = tblRef(schema, table);
+    ByteSink out = Files.asByteSink(tbl, FileWriteMode.APPEND);
+    ByteArrayOutputStream byteMaker = new ByteArrayOutputStream();
+    // Reusable references
+    Column col;
+    String value;
+    String[] valueArray;
+    // ----------------------
+    try {
+      for (String record : t) {
+        valueArray = record.split(",");
+        /**
+         * When a new record is appended to DB, it is separated into several value. Each value
+         * matches a Column object. When each value is parsed to byte array and written to DB, the
+         * corresponding ndx file for this column will be updated.
+         * <p>
+         * The Column should be updated before write a whole record to the tbl file.
+         */
+        for (int i = 0; i < valueArray.length; i++) {
+          value = valueArray[i].trim();
+          col = t.getColumns().get(i);
+          // parse the value for this column and write the value to DB
+          Method method =
+              DataType.class.getMethod(col.getDataType().getParseToByteArray(), String.class);
+          byteMaker.write((byte[]) method.invoke(null, value));
+          // ----------------------
+          NdxUtils.updateIndexAtAppendingColumn(schema, table, col, value,
+              (int) tblRef(schema, table).length());
+        }
+        out.write(byteMaker.toByteArray());
+        // Clear the old byte array
+        byteMaker.reset();
+      }
+      if (!schema.equals(InfoSchema.getInfoSchema())) {
+        InfoSchemaUtils.UpdateInfoSchema.atAppendingRecords(schema, table, rows);
+      }
+    } catch (Exception e) {
+      DBExceptions.newError(e);
+    }
+  }
+  // --------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------
+
+
+
   /**
    * A private class that helps to handle ndx file.
    *
@@ -216,7 +356,7 @@ public abstract class TblUtils {
      */
     public static void updateIndexAtAppendingColumn(String schema, String table, Column col,
         String value, int position) throws Exception {
-      File file = FileUtils.ndxRef(schema, table, col.getName());
+      File file = ndxRef(schema, table, col.getName());
       List<Ndx> ndxList = getNdxList(schema, table, col);
       Ndx ndx = findNdx(col, value, ndxList);
       // ----------------------
@@ -250,7 +390,7 @@ public abstract class TblUtils {
      */
     public static List<Ndx> getNdxList(String schema, String table, Column col) throws Exception {
       // Read in all bytes
-      File file = FileUtils.ndxRef(schema, table, col.getName());
+      File file = ndxRef(schema, table, col.getName());
       byte[] fileContent = Files.toByteArray(file);
       // Change to Ndx Object
       List<Ndx> ndxList = Lists.newArrayList();
@@ -366,10 +506,6 @@ public abstract class TblUtils {
       }
     }
 
-  }
-
-  public static void main(String[] args) {
-    new DatabaseDesign();
   }
 
 

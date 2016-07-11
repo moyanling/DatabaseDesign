@@ -1,31 +1,38 @@
 package org.mo39.fmbh.databasedesign.utils;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.mo39.fmbh.databasedesign.utils.IOUtils.tblRef;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.junit.Assert;
-import org.mo39.fmbh.databasedesign.framework.InfoSchema;
 import org.mo39.fmbh.databasedesign.model.Column;
 import org.mo39.fmbh.databasedesign.model.Constraint;
 import org.mo39.fmbh.databasedesign.model.Constraint.NoConstraint;
 import org.mo39.fmbh.databasedesign.model.Constraint.NotNull;
 import org.mo39.fmbh.databasedesign.model.Constraint.PrimaryKey;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
+import org.mo39.fmbh.databasedesign.model.DBExceptions.InvalidInformationSchemaException;
 import org.mo39.fmbh.databasedesign.model.DataType;
+import org.mo39.fmbh.databasedesign.model.InfoSchema;
+import org.mo39.fmbh.databasedesign.model.Table;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteSink;
 import com.google.common.io.FileWriteMode;
 import com.google.common.io.Files;
+
 
 
 /**
@@ -34,7 +41,114 @@ import com.google.common.io.Files;
  * @author Jihan Chen
  *
  */
-class InfoSchemaUtils {
+public class InfoSchemaUtils {
+
+  private static File schemata = tblRef(InfoSchema.getInfoSchema(), InfoSchema.getSchemata());
+  private static File tables = tblRef(InfoSchema.getInfoSchema(), InfoSchema.getTables());
+  private static File columns = tblRef(InfoSchema.getInfoSchema(), InfoSchema.getColumns());
+
+  public static boolean isReserved(String schema) {
+    Preconditions.checkArgument(schema != null);
+    return schema.equals(InfoSchema.getInfoSchema());
+  }
+
+  /**
+   * Initiate the information schema. If all three tables already exist, return. Otherwise create
+   * three tblRef(infoSchema, tables).
+   *
+   */
+  public static void initInfoSchema() {
+    if (exists()) {
+      return;
+    }
+    try {
+      Paths.get(InfoSchema.getArchiveRoot(), InfoSchema.getInfoSchema()).toFile().mkdirs();
+      Paths.get(InfoSchema.getArchiveRoot(), InfoSchema.getFileLock()).toFile().createNewFile();
+      createInformationTable(InfoSchema.getCreateSchemata(), InfoSchema.getSchemata(),
+          InfoSchema.getSchemataValues());
+      createInformationTable(InfoSchema.getCreateTables(), InfoSchema.getTables(),
+          InfoSchema.getTablesValues());
+      createInformationTable(InfoSchema.getCreateColumns(), InfoSchema.getColumns(),
+          InfoSchema.getColumnsValues());
+    } catch (Exception e) {
+      DBExceptions.newError(e);
+    }
+  }
+
+  /**
+   * Validate schemata and tables.
+   *
+   */
+  public static void validate() {
+    String message;
+    if (InfoSchemaUtils.validateSchemas()) {
+      for (String schema : InfoSchemaUtils.getSchemas()) {
+        if (!InfoSchemaUtils.validateTables(schema)) {
+          message = "Invalid table in schema - '" + schema + "'.";
+          break;
+        }
+      }
+      return;
+    } else {
+      message = "Invalid schemata.";
+    }
+    throw new InvalidInformationSchemaException(message);
+  }
+
+  /**
+   * Check if three tables of information schema exist.
+   *
+   * @return
+   */
+  public static boolean exists() {
+    if (schemata.exists() && tables.exists() && columns.exists()) {
+      return true;
+    } else {
+      clear();
+      return false;
+    }
+  }
+
+  /**
+   * Clear all three tables in information_schema;
+   *
+   */
+  public static void clear() {
+    try {
+      if (schemata.exists()) {
+        java.nio.file.Files.delete(schemata.toPath());
+      }
+      if (tables.exists()) {
+        java.nio.file.Files.delete(tables.toPath());
+      }
+      if (columns.exists()) {
+        java.nio.file.Files.delete(columns.toPath());
+      }
+    } catch (Exception e) {
+      DBExceptions.newError(e);
+    }
+  }
+
+  /**
+   * Create SCHEMATA, TABLES, and COLUMNS table in INFORMATION_SCHEMA.
+   *
+   * @throws IOException
+   * @throws DBExceptions
+   */
+  private static void createInformationTable(String create, String table, List<String> values)
+      throws IOException, DBExceptions {
+    String schema = InfoSchema.getInfoSchema();
+    List<Column> cols = Column.newColumnDefinition(create);
+    tblRef(schema, table).createNewFile();
+    for (Column col : cols) {
+      IOUtils.ndxRef(schema, table, col.getName()).createNewFile();
+    }
+    Table t = Table.init(schema, table, cols);
+    for (String arg : values) {
+      t.addRecord(arg);
+    }
+    t.writeToDB();
+  }
 
   /**
    * Get schemas from SCHEMATA. This function is not relaying on the definition of SCHEMATA table.
@@ -45,7 +159,7 @@ class InfoSchemaUtils {
    */
   public static Set<String> getSchemas() {
     Set<String> schemas = Sets.newHashSet();
-    File tbl = FileUtils.tblRef(InfoSchema.getInfoSchema(), InfoSchema.getSchemata());
+    File tbl = tblRef(InfoSchema.getInfoSchema(), InfoSchema.getSchemata());
     try {
       byte[] fileContent = Files.toByteArray(tbl);
       ByteBuffer bb = ByteBuffer.wrap(fileContent);
@@ -70,7 +184,7 @@ class InfoSchemaUtils {
   public static Set<String> getTables(String schema) {
     checkArgument(schema != null);
     Set<String> tables = Sets.newHashSet();
-    File tbl = FileUtils.tblRef(InfoSchema.getInfoSchema(), InfoSchema.getTables());
+    File tbl = tblRef(InfoSchema.getInfoSchema(), InfoSchema.getTables());
     try {
       String schemaName;
       String tableName;
@@ -103,7 +217,7 @@ class InfoSchemaUtils {
     checkArgument(schema != null && table != null);
     List<Column> cols = Lists.newArrayList();
     try {
-      byte[] fileContent = Files.toByteArray(UpdateInfoSchema.columns);
+      byte[] fileContent = Files.toByteArray(columns);
       ByteBuffer bb = ByteBuffer.wrap(fileContent);
       List<UpdateInfoSchema.InfoColumn> list = UpdateInfoSchema.InfoColumn.getInfoColumnList(bb);
       List<UpdateInfoSchema.InfoColumn> filteredList =
@@ -135,6 +249,46 @@ class InfoSchemaUtils {
   }
 
 
+  /**
+   * Validate whether the schemas in SCHEMATA table is consistent with schema folders in archive.
+   *
+   * @return
+   */
+  static boolean validateSchemas() {
+    Set<String> schemas = Sets.newHashSet();
+    File[] files = new File(InfoSchema.getArchiveRoot()).listFiles();
+    for (File file : files) {
+      if (file.isDirectory()) {
+        if (!file.getName().equals(InfoSchema.getInfoSchema())) {
+          schemas.add(file.getName());
+        }
+      }
+    }
+    return schemas.equals(getSchemas());
+  }
+
+  /**
+   * Validate whether the tables in TABLES is consistent with tables in schema fold in archive.
+   *
+   * @return
+   */
+  static boolean validateTables(String schema) {
+    checkArgument(schema != null);
+    Set<String> tables = Sets.newHashSet();
+    List<String> fileList = Lists.newArrayList();
+    File[] files = Paths.get(InfoSchema.getArchiveRoot(), schema).toFile().listFiles();
+    for (File file : files) {
+      if (file.isFile()) {
+        if (Pattern.compile(".*\\.tbl").matcher(file.getName()).matches()) {
+          fileList.add(file.getName());
+        }
+      }
+    }
+    for (String tbl : fileList) {
+      tables.add(tbl.substring(0, tbl.length() - 4));
+    }
+    return tables.equals(getTables(schema));
+  }
 
   /**
    * Helper class to update info schema.
@@ -144,12 +298,6 @@ class InfoSchemaUtils {
    */
   static class UpdateInfoSchema {
 
-    private static File schemata =
-        FileUtils.tblRef(InfoSchema.getInfoSchema(), InfoSchema.getSchemata());
-    private static File tables =
-        FileUtils.tblRef(InfoSchema.getInfoSchema(), InfoSchema.getTables());
-    private static File columns =
-        FileUtils.tblRef(InfoSchema.getInfoSchema(), InfoSchema.getColumns());
 
     /**
      * Update information schema when new schema is created. This function appends the new schema
