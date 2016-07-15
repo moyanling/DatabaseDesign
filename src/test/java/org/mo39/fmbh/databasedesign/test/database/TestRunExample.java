@@ -1,5 +1,6 @@
 package org.mo39.fmbh.databasedesign.test.database;
 
+import java.io.IOException;
 import java.io.PrintStream;
 
 import org.mo39.fmbh.databasedesign.framework.DatabaseDesign;
@@ -8,8 +9,8 @@ import org.mo39.fmbh.databasedesign.model.Cmd;
 public class TestRunExample {
 
 
-  public static void main(String[] args) {
-    runExample(System.out);
+  public static void main(String[] args) throws IOException {
+    runExample();
   }
 
   /**
@@ -39,14 +40,19 @@ public class TestRunExample {
         "select org.mo39.fmbh.databasedesign.test.database.Animal from Zoo where nope = 10;",
         "select Nope from Zoo where sector = 10;",
         "select org.mo39.fmbh.databasedesign.test.database.Animal from Zoo;",
-        "delete schema Zoo_Schema;",
+//        "delete schema Zoo_Schema;",
         "show schemas;",
         "exit;"};
     DatabaseDesign dbDesign = new DatabaseDesign();
+    DatabaseDesign.setPrinterToView(p);
     for (String cmd: cmdArr) {
       dbDesign.runCmd(Cmd.supports(cmd));
       p.println("\n===============================");
     }
+  }
+
+  public static void runExample() {
+    runExample(System.out);
   }
 
 }

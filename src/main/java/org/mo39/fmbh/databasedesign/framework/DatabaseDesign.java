@@ -1,5 +1,6 @@
 package org.mo39.fmbh.databasedesign.framework;
 
+import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -13,7 +14,6 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.mo39.fmbh.databasedesign.executor.Executable;
-import org.mo39.fmbh.databasedesign.executor.Executable.IsReadOnly;
 import org.mo39.fmbh.databasedesign.executor.Executable.RequiresActiveSchema;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
 import org.mo39.fmbh.databasedesign.model.Cmd;
@@ -32,6 +32,10 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
  *
  */
 public class DatabaseDesign {
+
+  public static void setPrinterToView(PrintStream p) {
+    View.p = p;
+  }
 
   /**
    * Initialize.
@@ -69,7 +73,6 @@ public class DatabaseDesign {
    * &emsp;- {@link Status}
    */
   public void runCmd(Cmd cmd) {
-    DBLocker lock = new DBLocker();
     Status.setCurrentCmd(cmd);
     try {
       Class<?> klass = Class.forName(cmd.getExecutorClassName());
@@ -84,9 +87,7 @@ public class DatabaseDesign {
           }
         }
         // ----------------------
-        if (method.getAnnotation(IsReadOnly.class) != null) {
-          lock.acquireLock();
-        }
+        DBLocker.acquireLock();
         // ----------------------
         method.invoke(executor);
         if (executor instanceof Viewable) {
@@ -106,7 +107,7 @@ public class DatabaseDesign {
     } catch (Exception e) {
       DBExceptions.newError(e);
     } finally {
-      lock.releaseLock();
+      DBLocker.releaseLock();
       Status.endRunCmd();
     }
   }

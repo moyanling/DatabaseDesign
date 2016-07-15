@@ -1,24 +1,30 @@
 package org.mo39.fmbh.databasedesign.framework;
 
+import java.io.PrintStream;
+
 public abstract class View {
 
-	public static void newView(Viewable obj) {
-	  print(obj.getView());
-	}
+  static PrintStream p = null;
 
-	public static void newView(String str) {
-		print(str);
-	}
+  public static void newView(Viewable obj) {
+    print(obj.getView());
+  }
 
-	public static interface Viewable {
+  public static void newView(String str) {
+    print(str);
+  }
 
-		String getView();
+  public static interface Viewable {
+    String getView();
+  }
 
-	}
-
-	private static void print(Object obj) {
-		System.out.print(obj);
-	}
+  private static void print(Object obj) {
+    if (p == null) {
+      System.out.print(obj);
+    } else {
+      p.println(obj);
+    }
+  }
 
 
 }

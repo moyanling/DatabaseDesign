@@ -1,8 +1,11 @@
 package org.mo39.fmbh.databasedesign.utils;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.Paths;
 
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
@@ -14,20 +17,30 @@ import org.mo39.fmbh.databasedesign.model.InfoSchema;
  * @author Jihan Chen
  *
  */
+@SuppressWarnings("resource")
 public class DBLocker {
 
-  private FileLock fc = null;
+  private static FileChannel fc;
 
-  public void acquireLock() {
-    RandomAccessFile file;
+  {
     try {
-      file = new RandomAccessFile(
-          Paths.get(InfoSchema.getArchiveRoot(), InfoSchema.getFileLock()).toFile(), "rw");
+      fc = new RandomAccessFile(
+          Paths.get(InfoSchema.getArchiveRoot(), InfoSchema.getFileLock()).toFile(), "rw")
+              .getChannel();
+    } catch (FileNotFoundException e) {
+      DBExceptions.newError(e);
+    }
+  }
+
+  private static FileLock fl = null;
+
+  public static void acquireLock() {
+    try {
       while (true) {
-        fc = file.getChannel().tryLock();
-        if (fc != null) {
+        try {
+          fl = fc.tryLock();
           break;
-        } else {
+        } catch (OverlappingFileLockException e) {
           System.err.println("I am sleeping");
           Thread.sleep(100);
         }
@@ -37,11 +50,12 @@ public class DBLocker {
     }
   }
 
-  public void releaseLock() {
+  public static void releaseLock() {
     try {
-      if (fc != null) {
-        fc.release();
-        fc.acquiredBy().close();
+      if (fl != null) {
+        fl.release();
+        fl.close();
+        fc.close();
       }
     } catch (IOException e) {
       DBExceptions.newError(e);
