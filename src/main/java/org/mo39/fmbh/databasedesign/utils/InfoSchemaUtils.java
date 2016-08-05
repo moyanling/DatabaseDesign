@@ -434,11 +434,31 @@ public class InfoSchemaUtils {
      * @param i
      */
     public static void atAppendingRecords(String schema, String table, int num) {
+      setRowNumber(schema, table, num, true);
+    }
+
+    /**
+     * Update information schema when records are cleared in table.
+     *
+     * @param schema
+     * @param table
+     * @param i
+     */
+    public static void atClearRecords(String schema, String table) {
+      setRowNumber(schema, table, 0, false);
+    }
+
+    private static void setRowNumber(String schema, String table, int num, boolean isAdding) {
       try {
         List<InfoTable> l = InfoTable.getInfoTableList(ByteBuffer.wrap(Files.toByteArray(tables)));
         for (InfoTable infoTable : l) {
           if (infoTable.schema.equals(schema) && infoTable.table.equals(table)) {
-            infoTable.rows += num;
+            if(isAdding) {
+              infoTable.rows += num;
+            }else{
+              infoTable.rows = num;
+            }
+            break;
           }
         }
         Files.write(InfoTable.listToBytes(l), tables);
@@ -446,6 +466,7 @@ public class InfoSchemaUtils {
         DBExceptions.newError(e);
       }
     }
+
 
     private static class InfoColumn {
       public String schema;
@@ -548,16 +569,16 @@ public class InfoSchemaUtils {
         // parse the constraint
         Constraint con = null;
         if (notNullArg == null && primaryArg == null) {
-          con = Constraint.supports("");
+          con = Constraint.valueOf("");
         } else if (notNullArg.equals("YES") && primaryArg == null) {
-          con = Constraint.supports("NOT NULL");
+          con = Constraint.valueOf("NOT NULL");
         } else if (notNullArg.equals("YES") && primaryArg.equals("YES")) {
-          con = Constraint.supports("PRIMARY KEY");
+          con = Constraint.valueOf("PRIMARY KEY");
         } else {
           DBExceptions.newError("No constraint is found");
         }
         return new InfoColumn(schemaName, tableName,
-            new Column(columnName, DataType.supports(dataTypeArg), con, ordinalPosi));
+            new Column(columnName, DataType.valueOf(dataTypeArg), con, ordinalPosi));
       }
 
     }

@@ -27,7 +27,7 @@ public class Table implements Iterable<String> {
   }
 
   /**
-   * Initiate a Row object using column definitions.
+   * Initiate a new Table object using column definitions.
    *
    * @param columns
    * @return
@@ -37,13 +37,26 @@ public class Table implements Iterable<String> {
   }
 
   /**
-   * Initiate a Row object using column definitions.
+   * Initiate a new Table object using column definitions.
    *
    * @param columns
    * @return
    */
   public static Table init(String schema, String table, List<Column> cols) {
     return new Table(schema, table, cols);
+  }
+
+  /**
+   * Parse a tbl file into a Table object
+   *
+   * @param schema
+   * @param table
+   * @return
+   */
+  public static Table valueOf(String schema, String table) {
+    Table t = Table.init(schema, table);
+    //TODO
+    return t;
   }
 
   /**
@@ -83,16 +96,6 @@ public class Table implements Iterable<String> {
     return records.size();
   }
 
-  /**
-   * Get the first record added to this Row object. The record will be then removed from this Table
-   * object.
-   *
-   * @return
-   */
-  public String getRecord() {
-    return records.remove(0);
-  }
-
   public String getSchema() {
     return schema;
   }
@@ -128,7 +131,7 @@ public class Table implements Iterable<String> {
         if (!hasNext()) {
           throw new NoSuchElementException();
         }
-        return getRecord();
+        return records.remove(0);
       }
 
       @Override
@@ -141,6 +144,14 @@ public class Table implements Iterable<String> {
 
   public List<Column> getColumns() {
     return columns;
+  }
+
+  public List<String> getRecords() {
+    return records;
+  }
+
+  public void setRecords(List<String> records) {
+    this.records = records;
   }
 
 }

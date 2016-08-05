@@ -80,6 +80,20 @@
 			<property name="description" value="SELECT &lt;FULL-QUALIFIED-JAVA-BEAN-CLASS-NAME&gt; FROM-WHERE style query. This will match the columns to bean properties." />
 			<property name="executorClassName" value="org.mo39.fmbh.databasedesign.executor.RecordOperationExecutor$Select" />
 		</bean>
+		
+		<bean id="update" class="org.mo39.fmbh.databasedesign.model.Cmd">
+			<property name="name" value="UPDATE ... ;" />
+			<property name="regx" value="^UPDATE\s+.*?\;$" />
+			<property name="description" value="UPDATE &lt;TABLE_NAME&gt; SET query." />
+			<property name="executorClassName" value="org.mo39.fmbh.databasedesign.executor.RecordOperationExecutor$Update" />
+		</bean>
+		
+		<bean id="delete" class="org.mo39.fmbh.databasedesign.model.Cmd">
+			<property name="name" value="DELETE ... ;" />
+			<property name="regx" value="^DELETE\s+.*?\;$" />
+			<property name="description" value="DELETE FROM &lt;TABLE_NAME&gt; ...." />
+			<property name="executorClassName" value="org.mo39.fmbh.databasedesign.executor.RecordOperationExecutor$Delete" />
+		</bean>
 
 		<!-- Exit -->
 		<bean id="exit" class="org.mo39.fmbh.databasedesign.model.Cmd">

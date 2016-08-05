@@ -10,6 +10,7 @@ import org.mo39.fmbh.databasedesign.framework.SystemProperties;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
+import org.mo39.fmbh.databasedesign.utils.DbChecker;
 import org.mo39.fmbh.databasedesign.utils.IOUtils;
 import org.mo39.fmbh.databasedesign.utils.InfoSchemaUtils;
 
@@ -34,7 +35,6 @@ public abstract class SchemaOperationExecutor {
     private String lineBreak = SystemProperties.get("lineBreak");
 
     @Override
-    @IsReadOnly
     public void execute() {
       Set<String> schemaSet = InfoSchemaUtils.getSchemas();
       String currentSchema = Status.getCurrentSchema();
@@ -70,13 +70,9 @@ public abstract class SchemaOperationExecutor {
         .matcher(Status.getCurrentCmdStr());
 
     @Override
-    @IsReadOnly
     public void execute() throws DBExceptions {
-      m.matches();
-      String schema = m.group(1);
-      if (!IOUtils.checkNamingConventions(schema)) {
-        throw new BadUsageException("Bad schema name: " + schema);
-      }
+      DbChecker.checkSyntax(m);
+      String schema = DbChecker.checkName(m, 1);
       Set<String> schemaSet = InfoSchemaUtils.getSchemas();
       if (schemaSet.contains(schema)) {
         Status.setCurrentSchema(schema);
@@ -106,11 +102,8 @@ public abstract class SchemaOperationExecutor {
 
     @Override
     public void execute() throws DBExceptions, IOException {
-      m.matches();
-      String schema = m.group(1);
-      if (!IOUtils.checkNamingConventions(schema)) {
-        throw new BadUsageException("Bad schema name: " + schema);
-      }
+      DbChecker.checkSyntax(m);
+      String schema = DbChecker.checkName(m, 1);
       if (InfoSchemaUtils.isReserved(schema)) {
         throw new BadUsageException(
             "Schema - '" + schema + "' is resevered. Please use others instead.");
@@ -152,11 +145,8 @@ public abstract class SchemaOperationExecutor {
 
     @Override
     public void execute() throws DBExceptions {
-      m.matches();
-      String schema = m.group(1).trim();
-      if (!IOUtils.checkNamingConventions(schema)) {
-        throw new BadUsageException("Bad schema name: " + schema);
-      }
+      DbChecker.checkSyntax(m);
+      String schema = DbChecker.checkName(m, 1);
       Set<String> schemaSet = InfoSchemaUtils.getSchemas();
       if (schemaSet.contains(schema)) {
         if (IOUtils.deleteSchema(schema)) {

@@ -31,6 +31,7 @@ public class TestBeanUtils {
     Assert.assertEquals(1, t1.getId());
   }
 
+  @SuppressWarnings("deprecation")
   @Test
   public void testBeanToString() throws DBExceptions {
     TestEntity t1 = new TestEntity();

@@ -13,6 +13,7 @@ import org.mo39.fmbh.databasedesign.framework.View.Viewable;
 import org.mo39.fmbh.databasedesign.model.Column;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
+import org.mo39.fmbh.databasedesign.utils.DbChecker;
 import org.mo39.fmbh.databasedesign.utils.IOUtils;
 import org.mo39.fmbh.databasedesign.utils.InfoSchemaUtils;
 
@@ -80,11 +81,8 @@ public abstract class TableOperationExecutor {
     @Override
     @RequiresActiveSchema
     public void execute() throws DBExceptions {
-      m.matches();
-      String table = m.group(1);
-      if (IOUtils.checkNamingConventions(table)) {
-        throw new BadUsageException("Bad table name: " + table);
-      }
+      DbChecker.checkSyntax(m);
+      String table = DbChecker.checkName(m, 1);
       String schema = Status.getCurrentSchema();
       Set<String> tableSet = InfoSchemaUtils.getTables(schema);
       if (!tableSet.contains(table)) {
@@ -122,14 +120,9 @@ public abstract class TableOperationExecutor {
     @RequiresActiveSchema
     public void execute() throws DBExceptions, IOException {
       List<Column> columns = Lists.newArrayList();
-      if (!m.matches()) {
-        throw new BadUsageException("No table or column definition is found.");
-      }
-      String table = m.group(1);
+      DbChecker.checkSyntax(m);
       String content = m.group(2);
-      if (!IOUtils.checkNamingConventions(table)) {
-        throw new BadUsageException("Bad table name.");
-      }
+      String table = DbChecker.checkName(m, 1);
       columns = Column.newColumnDefinition(content);
       String schema = Status.getCurrentSchema();
       if (InfoSchemaUtils.getTables(schema).contains(table)) {

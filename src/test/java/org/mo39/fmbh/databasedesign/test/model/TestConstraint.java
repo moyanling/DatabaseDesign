@@ -18,7 +18,7 @@ public class TestConstraint {
 
   @Test
   public void testSubClass() {
-    Constraint primary = Constraint.supports("primary key");
+    Constraint primary = Constraint.valueOf("primary key");
     assertEquals(PrimaryKey.class, primary.getClass());
     assertTrue(Constraint.class.isAssignableFrom(primary.getClass()));
   }

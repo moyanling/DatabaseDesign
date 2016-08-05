@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.text.WordUtils;
 import org.mo39.fmbh.databasedesign.model.Column;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
@@ -71,11 +72,13 @@ public abstract class BeanUtils {
 
   /**
    * Return a String description of a bean.
+   * <p>
+   * use {@link ReflectionToStringBuilder.reflectionToString} instead
    *
-   * @param beanClass
    * @param t
    * @return
    */
+  @Deprecated
   public static final <T> String beanToString(T t) {
 
     Pattern pattern = Pattern.compile("get(.*)");

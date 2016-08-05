@@ -6,11 +6,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.mo39.fmbh.databasedesign.model.Constraint.PrimaryKey;
-import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.DuplicatePrimaryKeyException;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.UnrecognizableConstraintException;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.UnrecognizableDataTypeException;
-import org.mo39.fmbh.databasedesign.utils.IOUtils;
+import org.mo39.fmbh.databasedesign.utils.DbChecker;
 
 import com.google.common.collect.Lists;
 
@@ -48,26 +47,19 @@ public class Column implements Comparable<Column> {
         ordinalPosi++;
         String colDef = columnDef.trim();
         Pattern regx = Pattern.compile(COLUMN_REGX);
-        Matcher matcher = regx.matcher(colDef);
-        matcher = regx.matcher(colDef);
+        Matcher m = regx.matcher(colDef);
         // ----------------------
-        if (!matcher.matches()) {
-          throw new BadUsageException("Bad column definition: " + colDef);
-        }
+        DbChecker.checkSyntax(m);
+        String columnName = DbChecker.checkName(m, 1);
         // ----------------------
-        String columnName = matcher.group(1).trim();
-        if (!IOUtils.checkNamingConventions(columnName)) {
-          throw new BadUsageException("Bad column name: " + columnName);
-        }
-        // ----------------------
-        String dataTypeStr = matcher.group(2).trim();
-        DataType dataType = DataType.supports(dataTypeStr);
+        String dataTypeStr = m.group(2).trim();
+        DataType dataType = DataType.valueOf(dataTypeStr);
         if (dataType == null) {
           throw new UnrecognizableDataTypeException("Unsupported data type: " + dataTypeStr);
         }
         // ----------------------
-        String constraintStr = matcher.group(3).trim();
-        Constraint constraint = Constraint.supports(constraintStr);
+        String constraintStr = m.group(3).trim();
+        Constraint constraint = Constraint.valueOf(constraintStr);
         if (constraint == null) {
           throw new UnrecognizableConstraintException("Unsupported constraint: " + constraintStr);
         }

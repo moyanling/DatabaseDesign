@@ -18,8 +18,8 @@ public class TestRunExample {
    * the cli, the prompt, cmd arg and other info will not be shown and all cmds are <b>NOT</b>
    * justified before execution. Make sure they are valid if they are modified.
    * <p>
-   * Running these cmds for the first time will create a new table and insert the record. After
-   * that, the newly created schema will be deleted.
+   * Running these cmds will create a new table and insert the record. After that, the newly created
+   * schema will be deleted.
    *
    * @param args
    */
@@ -37,16 +37,16 @@ public class TestRunExample {
         "select org.mo39.fmbh.databasedesign.test.database.Animal from Zoo where animal_ID = 1;",
         "select org.mo39.fmbh.databasedesign.test.database.Animal from Zoo where name = nope;",
         "select org.mo39.fmbh.databasedesign.test.database.Animal from Zoo where sector = 10;",
-        "select org.mo39.fmbh.databasedesign.test.database.Animal from Zoo where nope = 10;",
-        "select Nope from Zoo where sector = 10;",
         "select org.mo39.fmbh.databasedesign.test.database.Animal from Zoo;",
-//        "delete schema Zoo_Schema;",
+//        "delete from Zoo where name = tiger;",
+//        "select org.mo39.fmbh.databasedesign.test.database.Animal from Zoo;",
+        "delete schema Zoo_Schema;",
         "show schemas;",
         "exit;"};
     DatabaseDesign dbDesign = new DatabaseDesign();
     DatabaseDesign.setPrinterToView(p);
     for (String cmd: cmdArr) {
-      dbDesign.runCmd(Cmd.supports(cmd));
+      dbDesign.runCmd(Cmd.valueOf(cmd));
       p.println("\n===============================");
     }
   }

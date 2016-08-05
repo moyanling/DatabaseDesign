@@ -20,7 +20,6 @@ import org.mo39.fmbh.databasedesign.model.Cmd;
 import org.mo39.fmbh.databasedesign.model.Constraint;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
 import org.mo39.fmbh.databasedesign.model.DataType;
-import org.mo39.fmbh.databasedesign.utils.DBLocker;
 import org.mo39.fmbh.databasedesign.utils.InfoSchemaUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -86,9 +85,6 @@ public class DatabaseDesign {
             View.newView("Illegal state. No active schema is found");
           }
         }
-        // ----------------------
-        DBLocker.acquireLock();
-        // ----------------------
         method.invoke(executor);
         if (executor instanceof Viewable) {
           View.newView(Viewable.class.cast(executor));
@@ -107,7 +103,6 @@ public class DatabaseDesign {
     } catch (Exception e) {
       DBExceptions.newError(e);
     } finally {
-      DBLocker.releaseLock();
       Status.endRunCmd();
     }
   }
@@ -157,7 +152,7 @@ public class DatabaseDesign {
           break;
         }
       }
-      Cmd cmd = Cmd.supports(query);
+      Cmd cmd = Cmd.valueOf(query);
       if (cmd != null) {
         dbDesign.runCmd(cmd);
       } else {

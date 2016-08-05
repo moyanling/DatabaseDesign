@@ -71,9 +71,15 @@ public interface Executable {
    * the method is read-only, multi read-only access can happen concurrently. Use this annotation on
    * execute method properly to improve the efficiency.
    *
+   * <p>
+   * This annotation cannot achieve the effect as expected because when one thread is reading
+   * database, other threads writing to database would have impact on reading as well.
+   *
+   *
    * @author Jihan Chen
    *
    */
+  @Deprecated
   @Target(ElementType.METHOD)
   @Retention(RetentionPolicy.RUNTIME)
   public static @interface IsReadOnly {

@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.mo39.fmbh.databasedesign.utils.IOUtils;
+import org.mo39.fmbh.databasedesign.utils.DbChecker;
 
 import com.google.common.base.Preconditions;
 
@@ -40,7 +40,7 @@ public abstract class Constraint {
    * @param arg
    * @return
    */
-  public static Constraint supports(String arg) {
+  public static Constraint valueOf(String arg) {
     Preconditions.checkArgument(arg != null);
     if (arg.equals("")) {
       Constraint nc = new NoConstraint();
@@ -121,7 +121,7 @@ public abstract class Constraint {
 
     @Override
     public boolean impose(String schema, String table, Column col, String value) {
-      return IOUtils.checkPrimaryKey(schema, table, col, value);
+      return DbChecker.checkPrimaryKey(schema, table, col, value);
     }
 
   }

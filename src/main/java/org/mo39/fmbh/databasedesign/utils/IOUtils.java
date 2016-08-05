@@ -10,19 +10,23 @@ import java.nio.ByteBuffer;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.mo39.fmbh.databasedesign.model.Column;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
+import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.ColumnNameNotFoundException;
 import org.mo39.fmbh.databasedesign.model.DataType;
 import org.mo39.fmbh.databasedesign.model.InfoSchema;
 import org.mo39.fmbh.databasedesign.model.Table;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.io.ByteSink;
 import com.google.common.io.FileWriteMode;
 import com.google.common.io.Files;
@@ -34,23 +38,6 @@ import com.google.common.io.Files;
  *
  */
 public abstract class IOUtils {
-
-  private static final Pattern NAMING_CONVENTION =
-      Pattern.compile("^[a-zA-Z][a-zA-Z0-9\\_\\-]*?(?<!\\_)(?<!\\-)$");
-
-  /**
-   * This function uses a regular expression to check the input name. The name could be schema,
-   * table or column name. This should be used when the name is input by the user other than is read
-   * from the archive.
-   *
-   * @param name
-   * @return
-   */
-  public static final boolean checkNamingConventions(String name) {
-    Preconditions.checkArgument(name != null);
-    return NAMING_CONVENTION.matcher(name).matches();
-  }
-
 
   /**
    * Return a tbl file reference according to schema and table name.
@@ -106,36 +93,14 @@ public abstract class IOUtils {
       }
       return toRet;
     }
-    // Find record according to index file
+    // ColumnName and value specified
     try {
-      // Extract column name and value
-      Pattern p = Pattern.compile("WHERE(.*)=(.*)", Pattern.CASE_INSENSITIVE);
-      Matcher m = p.matcher(whereClause);
-      m.matches();
-      String columnName = m.group(1).trim();
-      String value = m.group(2).trim();
-      // Get Column according to the columnName
-      Column column = null;
-      for (Column col : cols) {
-        if (col.getName().equalsIgnoreCase(columnName)) {
-          column = col;
-          break;
-        }
-      }
-      if (column == null) {
-        throw new ColumnNameNotFoundException("'" + columnName + "' is not found.");
-      }
-      // ----------------------
-      List<NdxUtils.Ndx> ndxList = NdxUtils.getNdxList(schema, table, column);
-      NdxUtils.Ndx ndx = NdxUtils.findNdx(column, value, ndxList);
-      if (ndx != null) {
-        List<Integer> positions = ndx.positions;
-        for (Integer posi : positions) {
-          bb.position(posi);
-          Object obj = BeanUtils.parse(beanClass, cols, bb);
-          if (obj != null) {
-            toRet.add(obj);
-          }
+      List<Integer> positions = locatePositions(schema, table, whereClause, cols);
+      for (Integer posi : positions) {
+        bb.position(posi);
+        Object obj = BeanUtils.parse(beanClass, cols, bb);
+        if (obj != null) {
+          toRet.add(obj);
         }
       }
     } catch (DBExceptions e) {
@@ -146,24 +111,82 @@ public abstract class IOUtils {
     return toRet;
   }
 
+
   /**
-   * Check if there's no duplicate value for a primary key.
+   * Clear all content and append left records to DB.
    *
    * @param schema
    * @param table
-   * @param col
-   * @param value
-   * @return
+   * @param where
+   * @throws DBExceptions
    */
-  public static boolean checkPrimaryKey(String schema, String table, Column col, String value) {
+  public static void deleteRecord(String schema, String table, String where) throws DBExceptions {
     try {
-      List<NdxUtils.Ndx> ndxList = NdxUtils.getNdxList(schema, table, col);
-      return NdxUtils.findNdx(col, value, ndxList) == null;
+      List<Column> cols = InfoSchemaUtils.getColumns(schema, table);
+      if (locatePositions(schema, table, where, cols).size() == 0) {
+        clearAllRecords(schema, table);
+        return;
+      }
+      Table t = Table.valueOf(schema, table);
+      Map<String, String> whereMap = parseWhere(where);
+      Column col = findColByName(cols, whereMap.get("name"));
+      List<String> filteredRecords = t.getRecords().stream()
+          .filter(i -> hasValueAtIndex(i, whereMap.get("value"), cols.indexOf(col)))
+          .collect(Collectors.toList());
+      t.setRecords(filteredRecords);
+      clearAllRecords(schema, table);
+      t.writeToDB();
+    } catch (DBExceptions e) {
+      throw e;
     } catch (Exception e) {
       DBExceptions.newError(e);
-      return false;
     }
   }
+
+  /**
+   * Set the value of a column name.
+   *
+   * @param schema
+   * @param table
+   * @param columnName
+   * @param value
+   * @param where
+   * @throws DBExceptions
+   */
+  public static void updateRecord(String schema, String table, String columnName, String value,
+      String where) throws DBExceptions {
+    try {
+      List<Column> cols = InfoSchemaUtils.getColumns(schema, table);
+      Table t = Table.valueOf(schema, table);
+
+      // No columnName and value specified
+      if (!where.equals("")) {
+        //TODO do filter
+      }
+
+
+      Map<String, String> whereMap = parseWhere(where);
+      Column col = findColByName(cols, whereMap.get("name"));
+      String record;
+      int indexOfCol = cols.indexOf(col);
+      for (int i = 0; i < t.size(); i++) {
+        record = t.getRecords().get(i);
+        if (hasValueAtIndex(record, whereMap.get("value"), indexOfCol)) {
+          String[] valueArr = record.split(",");
+          valueArr[i] = value;
+          t.getRecords().set(i, Joiner.on(",").join(valueArr));
+        }
+      }
+      clearAllRecords(schema, table);
+      t.writeToDB();
+    } catch (DBExceptions e) {
+      throw e;
+    } catch (Exception e) {
+      DBExceptions.newError(e);
+    }
+  }
+
+
 
   /**
    * Rewrite a file using the new byte array. It aims at modifying the content of a file.
@@ -193,8 +216,6 @@ public abstract class IOUtils {
     }
   }
 
-  // --------------------------------------------------------------------------------------------
-  // --------------------------------------------------------------------------------------------
   /**
    * Create a new schema i. e.a folder to hold tables.**
    *
@@ -275,7 +296,6 @@ public abstract class IOUtils {
       return true;
     }
     return false;
-
   }
 
   /**
@@ -330,184 +350,83 @@ public abstract class IOUtils {
       DBExceptions.newError(e);
     }
   }
-  // --------------------------------------------------------------------------------------------
-  // --------------------------------------------------------------------------------------------
-
-
 
   /**
-   * A private class that helps to handle ndx file.
+   * Helper method that returns the position according to where clause. <br>
+   * If no match is found, return an empty list other than null.
    *
-   * @author Jihan Chen
    *
+   * @param schema
+   * @param table
+   * @param where
+   * @return
+   * @throws Exception
    */
-  private static class NdxUtils {
-
-    /**
-     * When a column of the record is written to DB, call this method to upate the corresponding ndx
-     * file for this column.
-     *
-     * @param schema
-     * @param table
-     * @param col
-     * @param value
-     * @param position
-     * @throws Exception
-     */
-    public static void updateIndexAtAppendingColumn(String schema, String table, Column col,
-        String value, int position) throws Exception {
-      File file = ndxRef(schema, table, col.getName());
-      List<Ndx> ndxList = getNdxList(schema, table, col);
-      Ndx ndx = findNdx(col, value, ndxList);
-      // ----------------------
-      if (ndx == null) {
-        // If no position is found, append the new one to the ndx list.
-        Ndx newNdx = new Ndx(col, value, position);
-        ndxList.add(newNdx);
-      } else {
-        // If a position can be found, need to update the value and add new position
-        ndx.num += 1;
-        ndx.positions.add(position);
-      }
-      // Convert the whole ndx list to byte array
-      byte[] ndxBytes;
-      byte[] newContent = new byte[0];
-      for (Ndx n : ndxList) {
-        ndxBytes = n.parseToBytes();
-        newContent = ArrayUtils.addAll(newContent, ndxBytes);
-      }
-      Files.write(newContent, file);
+  private static List<Integer> locatePositions(String schema, String table, String where,
+      List<Column> cols) throws Exception {
+    Preconditions.checkArgument(where != "");
+    List<Integer> toRet = Lists.newArrayList();
+    // Extract column name and value
+    Map<String, String> whereMap = parseWhere(where);
+    // Get Column according to the columnName
+    Column column = findColByName(cols, whereMap.get("name"));
+    // ----------------------
+    List<NdxUtils.Ndx> ndxList = NdxUtils.getNdxList(schema, table, column);
+    NdxUtils.Ndx ndx = NdxUtils.findNdx(column, whereMap.get("value"), ndxList);
+    if (ndx != null) {
+      toRet = ndx.positions;
     }
-
-    /**
-     * Convert certain ndx file into a List containing Ndx objects.
-     *
-     * @param schema
-     * @param table
-     * @param col
-     * @return
-     * @throws Exception
-     */
-    public static List<Ndx> getNdxList(String schema, String table, Column col) throws Exception {
-      // Read in all bytes
-      File file = ndxRef(schema, table, col.getName());
-      byte[] fileContent = Files.toByteArray(file);
-      // Change to Ndx Object
-      List<Ndx> ndxList = Lists.newArrayList();
-      ByteBuffer bb = ByteBuffer.wrap(fileContent);
-      while (bb.hasRemaining()) {
-        ndxList.add(Ndx.parseFromBytes(bb, col));
-      }
-      return ndxList;
-    }
-
-    /**
-     *
-     * @param col
-     * @param value
-     * @param ndxList
-     * @return
-     * @throws Exception
-     */
-    public static Ndx findNdx(Column col, String value, List<Ndx> ndxList) throws Exception {
-      byte[] byteArray = (byte[]) DataType.class
-          .getMethod(col.getDataType().getParseToByteArray(), String.class).invoke(null, value);
-      Object dataTypeValue =
-          DataType.class.getMethod(col.getDataType().getParseFromByteBuffer(), ByteBuffer.class)
-              .invoke(null, ByteBuffer.wrap(byteArray));
-      for (Ndx ndx : ndxList) {
-        if (ndx.value == null ? dataTypeValue == null : ndx.value.equals(dataTypeValue)) {
-          return ndx;
-        }
-      }
-      return null;
-    }
-
-    /**
-     * Class presentation for the value indexes(positions) pairs in ndx file for a certain column.
-     * <p>
-     * Since NdxUtils is a private class, this Ndx class is not accessable from outside, so it's
-     * variable member modifiers are public for convenience. Take care of that when using this
-     * class.
-     *
-     * @author Jihan Chen
-     *
-     */
-    public static class Ndx {
-
-      public Object value;
-      public int num;
-      public List<Integer> positions;
-
-      public Column col;
-
-      public Ndx(Object value, int num, List<Integer> positions, Column col) {
-        this.value = value;
-        this.positions = positions;
-        this.col = col;
-        this.num = num;
-      }
-
-      public Ndx(Column col, String value, int posi) throws Exception {
-        byte[] byteArray = (byte[]) DataType.class
-            .getMethod(col.getDataType().getParseToByteArray(), String.class).invoke(null, value);
-        Object dataTypeValue =
-            DataType.class.getMethod(col.getDataType().getParseFromByteBuffer(), ByteBuffer.class)
-                .invoke(null, ByteBuffer.wrap(byteArray));
-        this.value = dataTypeValue;
-        num = 1;
-        positions = Lists.newArrayList(posi);
-        this.col = col;
-      }
-
-      /**
-       * parse the byte array to create a Ndx Object
-       *
-       * @param bb
-       * @param col
-       * @return
-       * @throws Exception
-       */
-      public static Ndx parseFromBytes(ByteBuffer bb, Column col) throws Exception {
-        Method method =
-            DataType.class.getMethod(col.getDataType().getParseFromByteBuffer(), ByteBuffer.class);
-        Object value = method.invoke(null, bb);
-        int num = DataType.parseIntFromByteBuffer(bb);
-        List<Integer> positions = Lists.newArrayList();
-        for (int i = 0; i < num; i++) {
-          positions.add(DataType.parseIntFromByteBuffer(bb));
-        }
-        return new Ndx(value, num, positions, col);
-      }
-
-      /**
-       * Parse the Ndx object to a byte array.
-       *
-       * @return
-       * @throws Exception
-       */
-      public byte[] parseToBytes() throws Exception {
-        byte[] posiBytes;
-        byte[] result = new byte[0];
-        Method method =
-            DataType.class.getMethod(col.getDataType().getParseToByteArray(), String.class);
-        if (value == null) {
-          value = "NULL";
-        }
-        byte[] valueBytes = (byte[]) method.invoke(null, value.toString());
-        result = ArrayUtils.addAll(result, valueBytes);
-        byte[] numBytes = DataType.parseIntToByteArray(String.valueOf(num));
-        result = ArrayUtils.addAll(result, numBytes);
-        for (Integer posi : positions) {
-          posiBytes = DataType.parseIntToByteArray(String.valueOf(posi));
-          result = ArrayUtils.addAll(result, posiBytes);
-        }
-        return result;
-      }
-    }
-
+    return toRet;
   }
 
+  private static Column findColByName(List<Column> cols, String columnName)
+      throws ColumnNameNotFoundException {
+    Column column = null;
+    for (Column col : cols) {
+      if (col.getName().equalsIgnoreCase(columnName)) {
+        column = col;
+        break;
+      }
+    }
+    if (column == null) {
+      throw new ColumnNameNotFoundException("'" + columnName + "' is not found.");
+    }
+    return column;
+  }
+
+  private static Map<String, String> parseWhere(String where) throws BadUsageException {
+    Map<String, String> toRet = Maps.newHashMap();
+    Matcher m = Pattern.compile("WHERE(.*)=(.*)", Pattern.CASE_INSENSITIVE).matcher(where);
+    DbChecker.checkSyntax(m);
+    toRet.put("name", m.group(1).trim());
+    toRet.put("value", m.group(2).trim());
+    return toRet;
+  }
+
+  /**
+   * Iterate all files in table folder, clear their content.<br>
+   * Update infoSchema, set the row number back to zero.
+   *
+   * @param schema
+   * @param table
+   */
+  private static void clearAllRecords(String schema, String table) {
+    try {
+      for (File file : Paths.get(InfoSchema.getArchiveRoot(), schema).toFile().listFiles()) {
+        if (file.getName().startsWith(table + ".")) {
+          Files.write(new byte[] {}, file);
+        }
+      }
+    } catch (IOException e) {
+      DBExceptions.newError(e);
+    }
+    InfoSchemaUtils.UpdateInfoSchema.atClearRecords(schema, table);
+  }
+
+  private static boolean hasValueAtIndex(String values, String v, int index) {
+    String[] vs = values.split(",");
+    return vs[index] == v;
+  }
 
 }
 

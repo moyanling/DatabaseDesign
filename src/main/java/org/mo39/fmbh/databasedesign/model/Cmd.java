@@ -31,7 +31,7 @@ public class Cmd {
    * @return returns {@code null} if not supported. returns corresponding Cmd object if supported.
    *         In this process, no new Cmd object is created.
    */
-  public static Cmd supports(String arg) {
+  public static Cmd valueOf(String arg) {
     Preconditions.checkArgument(arg != null);
     for (Cmd cmd : Cmd.supportedCmdList) {
       Pattern regx = Pattern.compile(cmd.regx, Pattern.CASE_INSENSITIVE);

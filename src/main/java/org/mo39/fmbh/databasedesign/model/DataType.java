@@ -33,7 +33,7 @@ public class DataType {
    * @return returns {@code null} if not supported. returns corresponding new DataType Object if
    *         supported.
    */
-  public static DataType supports(String arg) {
+  public static DataType valueOf(String arg) {
     Preconditions.checkArgument(arg != null);
     for (DataType type : DataType.supportedDataTypeList) {
       Pattern regx = Pattern.compile(type.regx, Pattern.CASE_INSENSITIVE);
