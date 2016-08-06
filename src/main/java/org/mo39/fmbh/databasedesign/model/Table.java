@@ -1,17 +1,22 @@
 package org.mo39.fmbh.databasedesign.model;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import org.mo39.fmbh.databasedesign.model.Constraint.PrimaryKey;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.AddRecordException;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.ConstraintViolationException;
 import org.mo39.fmbh.databasedesign.utils.IOUtils;
 import org.mo39.fmbh.databasedesign.utils.InfoSchemaUtils;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+import com.google.common.io.Files;
 
 public class Table implements Iterable<String> {
 
@@ -47,17 +52,37 @@ public class Table implements Iterable<String> {
   }
 
   /**
-   * Parse a tbl file into a Table object
+   * Parse a tbl file into a Table object.<br>
+   * This function is not supposed to throw any exception.
    *
    * @param schema
    * @param table
    * @return
+   * @throws DBExceptions 
    */
-  public static Table valueOf(String schema, String table) {
+  public static Table valueOf(String schema, String table) throws DBExceptions {
     Table t = Table.init(schema, table);
-    //TODO
+    try {
+      ByteBuffer bb = ByteBuffer.wrap(Files.toByteArray(IOUtils.tblRef(schema, table)));
+      while (bb.hasRemaining()) {
+        List<String> values = Lists.newArrayList();
+        for (Column col : t.columns) {
+          values.add(
+              DataType.class.getMethod(col.getDataType().getParseFromByteBuffer(), ByteBuffer.class)
+                  .invoke(null, bb).toString());
+        }
+        String record = Joiner.on(",").join(values);
+        t.records.add(record);
+      }
+    } catch (IOException | NoSuchMethodException | SecurityException | IllegalAccessException
+        | IllegalArgumentException | InvocationTargetException e) {
+      DBExceptions.newError(e);
+    }
     return t;
   }
+
+  private int primaryKeyCounter = 0;
+  private String primaryKeyValue = null;
 
   /**
    * Add a new record to this Table object. The record is presented as a byte array.
@@ -71,12 +96,24 @@ public class Table implements Iterable<String> {
       throw new AddRecordException(
           "Adding record: The number of values is not consistent with column definition.");
     }
+
     for (int i = 0; i < valueArray.length; i++) {
       Column col = columns.get(i);
       String value = valueArray[i].trim();
       if (!DataType.checkDataType(col, value)) {
         throw new ConstraintViolationException(
             "Value: " + value + " does not observe datatype: " + col.getDataType().getArg());
+      }
+      if (col.getConstraint() instanceof PrimaryKey) {
+        if (primaryKeyValue == null || value.equals(primaryKeyValue)) {
+          primaryKeyValue = value;
+          primaryKeyCounter += 1;
+          if (primaryKeyCounter >= 2) {
+            throw new ConstraintViolationException(
+                "Value: " + value + " does not observe the constraint "
+                    + col.getConstraint().getName() + " for Column " + col.getName());
+          }
+        }
       }
       if (!col.getConstraint().impose(schema, table, col, value)) {
         throw new ConstraintViolationException(

@@ -13,7 +13,7 @@ import org.mo39.fmbh.databasedesign.framework.View.Viewable;
 import org.mo39.fmbh.databasedesign.model.Column;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
-import org.mo39.fmbh.databasedesign.utils.DbChecker;
+import org.mo39.fmbh.databasedesign.utils.DBChecker;
 import org.mo39.fmbh.databasedesign.utils.IOUtils;
 import org.mo39.fmbh.databasedesign.utils.InfoSchemaUtils;
 
@@ -50,11 +50,12 @@ public abstract class TableOperationExecutor {
       Set<String> tableSet = InfoSchemaUtils.getTables(Status.getCurrentSchema());
       StringBuilder sb = new StringBuilder("Show Tables: ");
       if (tableSet.size() == 0) {
-        sb.append(lineBreak + tab + "None  ");
-      } else {
-        for (String table : tableSet) {
-          sb.append(lineBreak + tab + table + lineBreak);
-        }
+        sb.append(lineBreak + tab + "None");
+        endMessage = sb.toString();
+        return;
+      }
+      for (String table : tableSet) {
+        sb.append(lineBreak + tab + table + lineBreak);
       }
       endMessage = sb.substring(0, sb.length() - 1).toString();
     }
@@ -81,8 +82,8 @@ public abstract class TableOperationExecutor {
     @Override
     @RequiresActiveSchema
     public void execute() throws DBExceptions {
-      DbChecker.checkSyntax(m);
-      String table = DbChecker.checkName(m, 1);
+      DBChecker.checkSyntax(m);
+      String table = DBChecker.checkName(m, 1);
       String schema = Status.getCurrentSchema();
       Set<String> tableSet = InfoSchemaUtils.getTables(schema);
       if (!tableSet.contains(table)) {
@@ -120,9 +121,9 @@ public abstract class TableOperationExecutor {
     @RequiresActiveSchema
     public void execute() throws DBExceptions, IOException {
       List<Column> columns = Lists.newArrayList();
-      DbChecker.checkSyntax(m);
+      DBChecker.checkSyntax(m);
       String content = m.group(2);
-      String table = DbChecker.checkName(m, 1);
+      String table = DBChecker.checkName(m, 1);
       columns = Column.newColumnDefinition(content);
       String schema = Status.getCurrentSchema();
       if (InfoSchemaUtils.getTables(schema).contains(table)) {

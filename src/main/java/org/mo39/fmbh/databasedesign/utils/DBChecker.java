@@ -7,10 +7,11 @@ import java.util.regex.Pattern;
 import org.mo39.fmbh.databasedesign.model.Column;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
+import org.mo39.fmbh.databasedesign.model.DBExceptions.ClassNotFound;
 
 import com.google.common.base.Preconditions;
 
-public class DbChecker {
+public class DBChecker {
   private static final Pattern NAMING_CONVENTION =
       Pattern.compile("^[a-zA-Z][a-zA-Z0-9\\_\\-]*?(?<!\\_)(?<!\\-)$");
 
@@ -27,6 +28,12 @@ public class DbChecker {
     return NAMING_CONVENTION.matcher(name).matches();
   }
 
+  /**
+   * Check if a Matcher object matches. If not, throw {@link BadUsageException}
+   * 
+   * @param m
+   * @throws BadUsageException
+   */
   public static void checkSyntax(Matcher m) throws BadUsageException {
     if (!m.matches()) {
       throw new BadUsageException("Syntax not valid.");
@@ -57,6 +64,17 @@ public class DbChecker {
     } catch (Exception e) {
       DBExceptions.newError(e);
       return false;
+    }
+  }
+
+  public static Class<?> checkClass(Matcher m, int group) throws ClassNotFound {
+    String className = m.group(group);
+    Class<?> beanClass;
+    try {
+      beanClass = Class.forName(className);
+      return beanClass;
+    } catch (ClassNotFoundException e) {
+      throw new ClassNotFound("Class '" + e.getMessage() + "' is not Found.");
     }
   }
 

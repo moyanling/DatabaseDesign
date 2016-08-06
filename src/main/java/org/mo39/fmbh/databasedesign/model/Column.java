@@ -9,7 +9,7 @@ import org.mo39.fmbh.databasedesign.model.Constraint.PrimaryKey;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.DuplicatePrimaryKeyException;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.UnrecognizableConstraintException;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.UnrecognizableDataTypeException;
-import org.mo39.fmbh.databasedesign.utils.DbChecker;
+import org.mo39.fmbh.databasedesign.utils.DBChecker;
 
 import com.google.common.collect.Lists;
 
@@ -49,8 +49,8 @@ public class Column implements Comparable<Column> {
         Pattern regx = Pattern.compile(COLUMN_REGX);
         Matcher m = regx.matcher(colDef);
         // ----------------------
-        DbChecker.checkSyntax(m);
-        String columnName = DbChecker.checkName(m, 1);
+        DBChecker.checkSyntax(m);
+        String columnName = DBChecker.checkName(m, 1);
         // ----------------------
         String dataTypeStr = m.group(2).trim();
         DataType dataType = DataType.valueOf(dataTypeStr);

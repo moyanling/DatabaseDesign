@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.mo39.fmbh.databasedesign.utils.DbChecker;
+import org.mo39.fmbh.databasedesign.utils.DBChecker;
 
 import com.google.common.base.Preconditions;
 
@@ -121,7 +121,7 @@ public abstract class Constraint {
 
     @Override
     public boolean impose(String schema, String table, Column col, String value) {
-      return DbChecker.checkPrimaryKey(schema, table, col, value);
+      return DBChecker.checkPrimaryKey(schema, table, col, value);
     }
 
   }

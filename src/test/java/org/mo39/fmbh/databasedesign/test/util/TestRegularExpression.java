@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
-import org.mo39.fmbh.databasedesign.utils.DbChecker;
+import org.mo39.fmbh.databasedesign.utils.DBChecker;
 
 public class TestRegularExpression {
 
@@ -65,15 +65,16 @@ public class TestRegularExpression {
   public void testUpdateRegx() throws BadUsageException {
     Pattern p = Pattern.compile("^UPDATE\\s+(.*?)\\s+SET\\s+(.*?)(\\s*?|\\s+WHERE\\s(.*=.*))\\;$",
         Pattern.CASE_INSENSITIVE);
-    Matcher m = p.matcher("UPDATE Customers SET ContactName=Alfred Schmidt, City=Hamburg WHERE CustomerName=Alfreds Futterkiste;");
-    DbChecker.checkSyntax(m);
-    Assert.assertEquals("Customers", DbChecker.checkName(m, 1));
+    Matcher m = p.matcher(
+        "UPDATE Customers SET ContactName=Alfred Schmidt, City=Hamburg WHERE CustomerName=Alfreds Futterkiste;");
+    DBChecker.checkSyntax(m);
+    Assert.assertEquals("Customers", DBChecker.checkName(m, 1));
     Assert.assertEquals("ContactName=Alfred Schmidt, City=Hamburg", m.group(2));
     Assert.assertEquals(" WHERE CustomerName=Alfreds Futterkiste", m.group(3));
 
     m = p.matcher("UPDATE Customers SET ContactName=Alfred Schmidt, City=Hamburg ;");
-    DbChecker.checkSyntax(m);
-    Assert.assertEquals("Customers", DbChecker.checkName(m, 1));
+    DBChecker.checkSyntax(m);
+    Assert.assertEquals("Customers", DBChecker.checkName(m, 1));
     Assert.assertEquals("ContactName=Alfred Schmidt, City=Hamburg", m.group(2));
   }
 

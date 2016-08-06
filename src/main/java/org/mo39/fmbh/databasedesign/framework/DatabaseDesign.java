@@ -1,6 +1,5 @@
 package org.mo39.fmbh.databasedesign.framework;
 
-import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -31,10 +30,6 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
  *
  */
 public class DatabaseDesign {
-
-  public static void setPrinterToView(PrintStream p) {
-    View.p = p;
-  }
 
   /**
    * Initialize.

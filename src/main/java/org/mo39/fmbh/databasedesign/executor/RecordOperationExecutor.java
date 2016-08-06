@@ -6,14 +6,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.mo39.fmbh.databasedesign.framework.Status;
 import org.mo39.fmbh.databasedesign.framework.SystemProperties;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
+import org.mo39.fmbh.databasedesign.model.Column;
+import org.mo39.fmbh.databasedesign.model.Constraint.PrimaryKey;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.ClassNotFound;
 import org.mo39.fmbh.databasedesign.model.Table;
-import org.mo39.fmbh.databasedesign.utils.DbChecker;
+import org.mo39.fmbh.databasedesign.utils.DBChecker;
 import org.mo39.fmbh.databasedesign.utils.IOUtils;
 import org.mo39.fmbh.databasedesign.utils.InfoSchemaUtils;
 
@@ -35,8 +38,8 @@ public abstract class RecordOperationExecutor {
     @RequiresActiveSchema
     public void execute() throws DBExceptions, IOException {
       String schema = Status.getCurrentSchema();
-      DbChecker.checkSyntax(m);
-      String table = DbChecker.checkName(m, 1);
+      DBChecker.checkSyntax(m);
+      String table = DBChecker.checkName(m, 1);
       String values = m.group(2);
       if (!InfoSchemaUtils.getTables(schema).contains(table)) {
         throw new BadUsageException("Table not found in current schema");
@@ -65,8 +68,8 @@ public abstract class RecordOperationExecutor {
     @Override
     @RequiresActiveSchema
     public void execute() throws DBExceptions {
-      DbChecker.checkSyntax(m);
-      String table = DbChecker.checkName(m, 2);
+      DBChecker.checkSyntax(m);
+      String table = DBChecker.checkName(m, 2);
       // ----------------------
       String className = m.group(1);
       Class<?> beanClass;
@@ -85,12 +88,13 @@ public abstract class RecordOperationExecutor {
       }
       StringBuilder sb = new StringBuilder("Result: " + lineBreak);
       if (resultSet.size() == 0) {
-        sb.append(tab + "None  ");
-      } else {
-        for (Object result : resultSet) {
-          sb.append(tab + ReflectionToStringBuilder.reflectionToString(beanClass.cast(result))
-              + lineBreak);
-        }
+        sb.append(tab + "None");
+        endMessage = sb.toString();
+        return;
+      }
+      for (Object result : resultSet) {
+        sb.append(tab + ReflectionToStringBuilder.reflectionToString(beanClass.cast(result),
+            ToStringStyle.SHORT_PREFIX_STYLE) + lineBreak);
       }
       endMessage = sb.substring(0, sb.length() - 1);
     }
@@ -111,14 +115,20 @@ public abstract class RecordOperationExecutor {
     @Override
     @RequiresActiveSchema
     public void execute() throws DBExceptions {
-      DbChecker.checkSyntax(m);
-      String table = DbChecker.checkName(m, 1);
+      DBChecker.checkSyntax(m);
+      String table = DBChecker.checkName(m, 1);
       String setClause = m.group(2).trim();
       String whereClause = m.group(3).trim();
       Matcher setMatcher = Pattern.compile("(.*)=(.*)").matcher(setClause);
-      DbChecker.checkSyntax(setMatcher);
-      IOUtils.updateRecord(Status.getCurrentSchema(), table, setMatcher.group(1).trim(),
-          setMatcher.group(2).trim(), whereClause);
+      DBChecker.checkSyntax(setMatcher);
+      String columnName = setMatcher.group(1).trim();
+      String value = setMatcher.group(2).trim();
+      List<Column> cols = InfoSchemaUtils.getColumns(Status.getCurrentSchema(), table);
+      Column col = cols.get(IOUtils.findColByName(cols, columnName));
+      if (col.getConstraint() instanceof PrimaryKey) {
+        throw new BadUsageException("Primary Key should be immutable.");
+      }
+      IOUtils.updateRecord(Status.getCurrentSchema(), table, columnName, value, whereClause);
       endMessage = "Record is updated";
     }
   }
@@ -137,9 +147,9 @@ public abstract class RecordOperationExecutor {
 
     @Override
     @RequiresActiveSchema
-    public void execute() throws DBExceptions {
-      DbChecker.checkSyntax(m);
-      String table = DbChecker.checkName(m, 1);
+    public void execute() throws DBExceptions, IOException {
+      DBChecker.checkSyntax(m);
+      String table = DBChecker.checkName(m, 1);
       String whereClause = m.group(2).trim();
       IOUtils.deleteRecord(Status.getCurrentSchema(), table, whereClause);
       endMessage = "Record is deleted";

@@ -10,7 +10,7 @@ import org.mo39.fmbh.databasedesign.framework.SystemProperties;
 import org.mo39.fmbh.databasedesign.framework.View.Viewable;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
-import org.mo39.fmbh.databasedesign.utils.DbChecker;
+import org.mo39.fmbh.databasedesign.utils.DBChecker;
 import org.mo39.fmbh.databasedesign.utils.IOUtils;
 import org.mo39.fmbh.databasedesign.utils.InfoSchemaUtils;
 
@@ -40,14 +40,15 @@ public abstract class SchemaOperationExecutor {
       String currentSchema = Status.getCurrentSchema();
       StringBuilder sb = new StringBuilder("Show Schemas: ");
       if (schemaSet.size() == 0) {
-        sb.append(lineBreak + tab + "None  ");
-      } else {
-        for (String schema : schemaSet) {
-          sb.append(lineBreak + tab + schema + lineBreak);
-        }
-        sb.append(lineBreak + "Currently activated schema: ");
-        sb.append(currentSchema == null ? "None" : currentSchema);
+        sb.append(lineBreak + tab + "None");
+        endMessage = sb.toString();
+        return;
       }
+      for (String schema : schemaSet) {
+        sb.append(lineBreak + tab + schema + lineBreak);
+      }
+      sb.append(lineBreak + "Currently activated schema: ");
+      sb.append(currentSchema == null ? "None" : currentSchema);
       endMessage = sb.toString();
     }
 
@@ -71,8 +72,8 @@ public abstract class SchemaOperationExecutor {
 
     @Override
     public void execute() throws DBExceptions {
-      DbChecker.checkSyntax(m);
-      String schema = DbChecker.checkName(m, 1);
+      DBChecker.checkSyntax(m);
+      String schema = DBChecker.checkName(m, 1);
       Set<String> schemaSet = InfoSchemaUtils.getSchemas();
       if (schemaSet.contains(schema)) {
         Status.setCurrentSchema(schema);
@@ -102,8 +103,8 @@ public abstract class SchemaOperationExecutor {
 
     @Override
     public void execute() throws DBExceptions, IOException {
-      DbChecker.checkSyntax(m);
-      String schema = DbChecker.checkName(m, 1);
+      DBChecker.checkSyntax(m);
+      String schema = DBChecker.checkName(m, 1);
       if (InfoSchemaUtils.isReserved(schema)) {
         throw new BadUsageException(
             "Schema - '" + schema + "' is resevered. Please use others instead.");
@@ -145,8 +146,8 @@ public abstract class SchemaOperationExecutor {
 
     @Override
     public void execute() throws DBExceptions {
-      DbChecker.checkSyntax(m);
-      String schema = DbChecker.checkName(m, 1);
+      DBChecker.checkSyntax(m);
+      String schema = DBChecker.checkName(m, 1);
       Set<String> schemaSet = InfoSchemaUtils.getSchemas();
       if (schemaSet.contains(schema)) {
         if (IOUtils.deleteSchema(schema)) {

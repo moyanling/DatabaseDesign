@@ -4,7 +4,7 @@ import java.io.PrintStream;
 
 public abstract class View {
 
-  static PrintStream p = null;
+  static PrintStream p = System.out;
 
   public static void newView(Viewable obj) {
     print(obj.getView());
@@ -24,6 +24,10 @@ public abstract class View {
     } else {
       p.println(obj);
     }
+  }
+
+  public static void setPrinter(PrintStream p2) {
+    p = p2;
   }
 
 

@@ -5,6 +5,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
@@ -13,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import org.mo39.fmbh.databasedesign.model.Column;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
@@ -76,7 +76,7 @@ public abstract class IOUtils {
    * @throws IOException
    */
   public static List<Object> selectFromDB(String schema, String table, Class<?> beanClass,
-      String whereClause) throws DBExceptions, IOException {
+      String whereClause) throws IOException, DBExceptions {
     checkArgument(schema != null && table != null && beanClass != null);
     // ----------------------
     byte[] fileContent = Files.toByteArray(tblRef(schema, table));
@@ -93,20 +93,13 @@ public abstract class IOUtils {
       }
       return toRet;
     }
-    // ColumnName and value specified
-    try {
-      List<Integer> positions = locatePositions(schema, table, whereClause, cols);
-      for (Integer posi : positions) {
-        bb.position(posi);
-        Object obj = BeanUtils.parse(beanClass, cols, bb);
-        if (obj != null) {
-          toRet.add(obj);
-        }
+    List<Integer> positions = locatePositions(schema, table, whereClause, cols);
+    for (Integer posi : positions) {
+      bb.position(posi);
+      Object obj = BeanUtils.parse(beanClass, cols, bb);
+      if (obj != null) {
+        toRet.add(obj);
       }
-    } catch (DBExceptions e) {
-      throw e;
-    } catch (Exception e) {
-      DBExceptions.newError(e);
     }
     return toRet;
   }
@@ -119,28 +112,25 @@ public abstract class IOUtils {
    * @param table
    * @param where
    * @throws DBExceptions
+   * @throws IOException
    */
-  public static void deleteRecord(String schema, String table, String where) throws DBExceptions {
-    try {
-      List<Column> cols = InfoSchemaUtils.getColumns(schema, table);
-      if (locatePositions(schema, table, where, cols).size() == 0) {
-        clearAllRecords(schema, table);
-        return;
-      }
-      Table t = Table.valueOf(schema, table);
-      Map<String, String> whereMap = parseWhere(where);
-      Column col = findColByName(cols, whereMap.get("name"));
-      List<String> filteredRecords = t.getRecords().stream()
-          .filter(i -> hasValueAtIndex(i, whereMap.get("value"), cols.indexOf(col)))
-          .collect(Collectors.toList());
-      t.setRecords(filteredRecords);
+  public static void deleteRecord(String schema, String table, String where)
+      throws DBExceptions, IOException {
+    List<Column> cols = InfoSchemaUtils.getColumns(schema, table);
+    if (locatePositions(schema, table, where, cols).size() == 0) {
       clearAllRecords(schema, table);
-      t.writeToDB();
-    } catch (DBExceptions e) {
-      throw e;
-    } catch (Exception e) {
-      DBExceptions.newError(e);
+      return;
     }
+    Table t = Table.valueOf(schema, table);
+    Map<String, String> whereMap = parseWhere(where);
+    int index = findColByName(cols, whereMap.get("name"));
+    for (int i = 0; i < t.size(); i++) {
+      if (hasValueAtIndex(t.getRecords().get(i), whereMap.get("value"), index)) {
+        t.getRecords().remove(i);
+      }
+    }
+    clearAllRecords(schema, table);
+    t.writeToDB();
   }
 
   /**
@@ -158,35 +148,34 @@ public abstract class IOUtils {
     try {
       List<Column> cols = InfoSchemaUtils.getColumns(schema, table);
       Table t = Table.valueOf(schema, table);
-
-      // No columnName and value specified
-      if (!where.equals("")) {
-        //TODO do filter
-      }
-
-
-      Map<String, String> whereMap = parseWhere(where);
-      Column col = findColByName(cols, whereMap.get("name"));
+      clearAllRecords(schema, table);
       String record;
-      int indexOfCol = cols.indexOf(col);
+      // No column name and value specified
+      if (where.equals("")) {
+
+        for (int i = 0; i < t.size(); i++) {
+          t.getRecords().set(i, replaceValueAtIndex(t.getRecords().get(i), value,
+              cols.indexOf(findColByName(cols, columnName))));
+        }
+        t.writeToDB();
+        return;
+      }
+      Map<String, String> whereMap = parseWhere(where);
+      int indexOfCol = findColByName(cols, whereMap.get("name"));
       for (int i = 0; i < t.size(); i++) {
         record = t.getRecords().get(i);
         if (hasValueAtIndex(record, whereMap.get("value"), indexOfCol)) {
-          String[] valueArr = record.split(",");
-          valueArr[i] = value;
-          t.getRecords().set(i, Joiner.on(",").join(valueArr));
+          t.getRecords().set(i,
+              replaceValueAtIndex(record, value, findColByName(cols, columnName)));
         }
       }
-      clearAllRecords(schema, table);
       t.writeToDB();
     } catch (DBExceptions e) {
       throw e;
-    } catch (Exception e) {
+    } catch (IOException e) {
       DBExceptions.newError(e);
     }
   }
-
-
 
   /**
    * Rewrite a file using the new byte array. It aims at modifying the content of a file.
@@ -306,7 +295,7 @@ public abstract class IOUtils {
    * @param table
    * @throws IOException
    */
-  public static void appendRecordsToDB(Table t) throws IOException {
+  public static void appendRecordsToDB(Table t) {
     int rows = t.size();
     String schema = t.getSchema();
     String table = t.getTable();
@@ -346,7 +335,8 @@ public abstract class IOUtils {
       if (!schema.equals(InfoSchema.getInfoSchema())) {
         InfoSchemaUtils.UpdateInfoSchema.atAppendingRecords(schema, table, rows);
       }
-    } catch (Exception e) {
+    } catch (NoSuchMethodException | SecurityException | IllegalAccessException
+        | IllegalArgumentException | InvocationTargetException | IOException e) {
       DBExceptions.newError(e);
     }
   }
@@ -360,16 +350,17 @@ public abstract class IOUtils {
    * @param table
    * @param where
    * @return
-   * @throws Exception
+   * @throws IOException
+   * @throws DBExceptions
    */
   private static List<Integer> locatePositions(String schema, String table, String where,
-      List<Column> cols) throws Exception {
+      List<Column> cols) throws IOException, DBExceptions {
     Preconditions.checkArgument(where != "");
     List<Integer> toRet = Lists.newArrayList();
     // Extract column name and value
     Map<String, String> whereMap = parseWhere(where);
     // Get Column according to the columnName
-    Column column = findColByName(cols, whereMap.get("name"));
+    Column column = cols.get(findColByName(cols, whereMap.get("name")));
     // ----------------------
     List<NdxUtils.Ndx> ndxList = NdxUtils.getNdxList(schema, table, column);
     NdxUtils.Ndx ndx = NdxUtils.findNdx(column, whereMap.get("value"), ndxList);
@@ -379,25 +370,28 @@ public abstract class IOUtils {
     return toRet;
   }
 
-  private static Column findColByName(List<Column> cols, String columnName)
+  /**
+   * Find a Column object in Columns lists according to ColumnName
+   * 
+   * @param cols
+   * @param columnName
+   * @return
+   * @throws ColumnNameNotFoundException
+   */
+  public static int findColByName(List<Column> cols, String columnName)
       throws ColumnNameNotFoundException {
-    Column column = null;
-    for (Column col : cols) {
-      if (col.getName().equalsIgnoreCase(columnName)) {
-        column = col;
-        break;
+    for (int i = 0; i < cols.size(); i++) {
+      if (cols.get(i).getName().equalsIgnoreCase(columnName)) {
+        return i;
       }
     }
-    if (column == null) {
-      throw new ColumnNameNotFoundException("'" + columnName + "' is not found.");
-    }
-    return column;
+    throw new ColumnNameNotFoundException("'" + columnName + "' is not found.");
   }
 
   private static Map<String, String> parseWhere(String where) throws BadUsageException {
     Map<String, String> toRet = Maps.newHashMap();
     Matcher m = Pattern.compile("WHERE(.*)=(.*)", Pattern.CASE_INSENSITIVE).matcher(where);
-    DbChecker.checkSyntax(m);
+    DBChecker.checkSyntax(m);
     toRet.put("name", m.group(1).trim());
     toRet.put("value", m.group(2).trim());
     return toRet;
@@ -423,9 +417,31 @@ public abstract class IOUtils {
     InfoSchemaUtils.UpdateInfoSchema.atClearRecords(schema, table);
   }
 
-  private static boolean hasValueAtIndex(String values, String v, int index) {
+  /**
+   * Has value at index
+   * 
+   * @param values
+   * @param v
+   * @param index
+   * @return
+   */
+  public static boolean hasValueAtIndex(String values, String v, int index) {
     String[] vs = values.split(",");
-    return vs[index] == v;
+    return vs[index].equals(v);
+  }
+
+  /**
+   * Replace value at index
+   * 
+   * @param record
+   * @param value
+   * @param i
+   * @return
+   */
+  public static String replaceValueAtIndex(String record, String value, int i) {
+    String[] valueArr = record.split(",");
+    valueArr[i] = value;
+    return Joiner.on(",").join(valueArr);
   }
 
 }
