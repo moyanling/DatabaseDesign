@@ -58,4 +58,4 @@
 <br>--run or -r EXAMPLE:
 <br>See TestRunExample.java
 
-<br>Premature is the root of all evil. The project is extensible but some codes on infrastructure level are duplicate and since they are processed using String other than an Object, they are not easy to modify.
+<br>Premature is the root of all evil. The project is extensible but some codes on infrastructure level are duplicate and since they are processed using String other than my own Object, they are not easy to modify.
