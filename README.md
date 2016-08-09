@@ -27,6 +27,10 @@
 <br>		&emsp;&emsp;- Inserts a row/record into a table.
 <br>	&emsp;SELECT ... ; 
 <br>		&emsp;&emsp;- SELECT &lt;FULL-QUALIFIED-JAVA-BEAN-CLASS-NAME&gt; FROM-WHERE style query. This will match the columns to bean properties.
+<br>	&emsp;UPDATE ... ; 
+<br>		&emsp;&emsp;- UPDATE <TABLE_NAME> SET query.
+<br>	&emsp;DELETE ... ; 
+<br>		&emsp;&emsp;- DELETE FROM <TABLE_NAME> ....
 <br>	&emsp;EXIT; 
 <br>		&emsp;&emsp;- Cleanly exits the program and saves all table and index information in non-volatile files.
 <br>
