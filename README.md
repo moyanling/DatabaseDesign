@@ -55,6 +55,7 @@
 <br>	&emsp;2. One database command should be less than ten lines. 
 <br>	&emsp;3. Please use letter, number, underscore and dash only. And please start with letter and don't end with underscore or dash for naming conventions.
 <br>
-<br>
 <br>--run or -r EXAMPLE:
 <br>See TestRunExample.java
+
+<br>Premature is the root of all evil. The project is extensible but some codes on infrastructure level are duplicate and since they are processed using String other than an Object, they are not easy to modify.
