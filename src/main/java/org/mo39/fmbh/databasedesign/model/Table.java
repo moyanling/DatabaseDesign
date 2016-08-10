@@ -1,7 +1,6 @@
 package org.mo39.fmbh.databasedesign.model;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.Iterator;
@@ -11,6 +10,7 @@ import java.util.NoSuchElementException;
 import org.mo39.fmbh.databasedesign.model.Constraint.PrimaryKey;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.AddRecordException;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.ConstraintViolationException;
+import org.mo39.fmbh.databasedesign.model.Table.Record;
 import org.mo39.fmbh.databasedesign.utils.IOUtils;
 import org.mo39.fmbh.databasedesign.utils.InfoSchemaUtils;
 
@@ -18,12 +18,12 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
-public class Table implements Iterable<String> {
+public class Table implements Iterable<Record> {
 
   private String schema = null;
   private String table = null;
   private List<Column> columns = null;
-  private List<String> records = Lists.newArrayList();
+  private List<Record> records = Lists.newArrayList();
 
   private Table(String schema, String table, List<Column> columns) {
     this.schema = schema;
@@ -58,24 +58,21 @@ public class Table implements Iterable<String> {
    * @param schema
    * @param table
    * @return
-   * @throws DBExceptions 
+   * @throws DBExceptions
    */
-  public static Table valueOf(String schema, String table) throws DBExceptions {
+  public static Table retrieve(String schema, String table) throws DBExceptions {
     Table t = Table.init(schema, table);
     try {
       ByteBuffer bb = ByteBuffer.wrap(Files.toByteArray(IOUtils.tblRef(schema, table)));
       while (bb.hasRemaining()) {
         List<String> values = Lists.newArrayList();
         for (Column col : t.columns) {
-          values.add(
-              DataType.class.getMethod(col.getDataType().getParseFromByteBuffer(), ByteBuffer.class)
-                  .invoke(null, bb).toString());
+          values.add(col.hitsBuffer(bb).toString());
         }
         String record = Joiner.on(",").join(values);
-        t.records.add(record);
+        t.records.add(t.new Record(record));
       }
-    } catch (IOException | NoSuchMethodException | SecurityException | IllegalAccessException
-        | IllegalArgumentException | InvocationTargetException e) {
+    } catch (IOException | SecurityException | IllegalArgumentException e) {
       DBExceptions.newError(e);
     }
     return t;
@@ -121,7 +118,7 @@ public class Table implements Iterable<String> {
                 + " for Column " + col.getName());
       }
     }
-    records.add(values);
+    records.add(this.new Record(values));
   }
 
   /**
@@ -155,8 +152,8 @@ public class Table implements Iterable<String> {
    *
    */
   @Override
-  public Iterator<String> iterator() {
-    return new Iterator<String>() {
+  public Iterator<Record> iterator() {
+    return new Iterator<Record>() {
 
       @Override
       public boolean hasNext() {
@@ -164,7 +161,7 @@ public class Table implements Iterable<String> {
       }
 
       @Override
-      public String next() {
+      public Record next() {
         if (!hasNext()) {
           throw new NoSuchElementException();
         }
@@ -183,12 +180,47 @@ public class Table implements Iterable<String> {
     return columns;
   }
 
-  public List<String> getRecords() {
+  public List<Record> getRecords() {
     return records;
   }
 
-  public void setRecords(List<String> records) {
-    this.records = records;
+  public class Record {
+
+    private String values;
+
+    private Record(String values) {
+      this.values = values;
+    }
+
+    /**
+     * Has value at index
+     *
+     * @param v
+     * @param index
+     * @return
+     */
+    public boolean hasValueAtIndex(String v, int index) {
+      String[] vs = values.split(",");
+      return vs[index].equals(v);
+    }
+
+    /**
+     * Replace value at index
+     *
+     * @param value
+     * @param i
+     * @return
+     */
+    public void replaceValueAtIndex(String value, int i) {
+      String[] valueArr = values.split(",");
+      valueArr[i] = value;
+      values = Joiner.on(",").join(valueArr);
+    }
+
+    @Override
+    public String toString() {
+      return values;
+    }
   }
 
 }

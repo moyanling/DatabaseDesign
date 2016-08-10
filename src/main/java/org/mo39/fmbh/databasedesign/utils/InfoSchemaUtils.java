@@ -453,9 +453,9 @@ public class InfoSchemaUtils {
         List<InfoTable> l = InfoTable.getInfoTableList(ByteBuffer.wrap(Files.toByteArray(tables)));
         for (InfoTable infoTable : l) {
           if (infoTable.schema.equals(schema) && infoTable.table.equals(table)) {
-            if(isAdding) {
+            if (isAdding) {
               infoTable.rows += num;
-            }else{
+            } else {
               infoTable.rows = num;
             }
             break;
@@ -632,7 +632,6 @@ public class InfoSchemaUtils {
           DBExceptions.newError(e);
         }
         return null;
-
       }
 
     }

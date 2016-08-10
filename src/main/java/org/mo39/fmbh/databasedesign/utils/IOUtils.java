@@ -5,8 +5,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -19,11 +17,10 @@ import org.mo39.fmbh.databasedesign.model.Column;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.BadUsageException;
 import org.mo39.fmbh.databasedesign.model.DBExceptions.ColumnNameNotFoundException;
-import org.mo39.fmbh.databasedesign.model.DataType;
 import org.mo39.fmbh.databasedesign.model.InfoSchema;
 import org.mo39.fmbh.databasedesign.model.Table;
+import org.mo39.fmbh.databasedesign.model.Table.Record;
 
-import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -121,11 +118,11 @@ public abstract class IOUtils {
       clearAllRecords(schema, table);
       return;
     }
-    Table t = Table.valueOf(schema, table);
+    Table t = Table.retrieve(schema, table);
     Map<String, String> whereMap = parseWhere(where);
     int index = findColByName(cols, whereMap.get("name"));
     for (int i = 0; i < t.size(); i++) {
-      if (hasValueAtIndex(t.getRecords().get(i), whereMap.get("value"), index)) {
+      if (t.getRecords().get(i).hasValueAtIndex(whereMap.get("value"), index)) {
         t.getRecords().remove(i);
       }
     }
@@ -147,15 +144,14 @@ public abstract class IOUtils {
       String where) throws DBExceptions {
     try {
       List<Column> cols = InfoSchemaUtils.getColumns(schema, table);
-      Table t = Table.valueOf(schema, table);
+      Table t = Table.retrieve(schema, table);
       clearAllRecords(schema, table);
-      String record;
       // No column name and value specified
       if (where.equals("")) {
 
         for (int i = 0; i < t.size(); i++) {
-          t.getRecords().set(i, replaceValueAtIndex(t.getRecords().get(i), value,
-              cols.indexOf(findColByName(cols, columnName))));
+          t.getRecords().get(i).replaceValueAtIndex(value,
+              cols.indexOf(findColByName(cols, columnName)));
         }
         t.writeToDB();
         return;
@@ -163,10 +159,8 @@ public abstract class IOUtils {
       Map<String, String> whereMap = parseWhere(where);
       int indexOfCol = findColByName(cols, whereMap.get("name"));
       for (int i = 0; i < t.size(); i++) {
-        record = t.getRecords().get(i);
-        if (hasValueAtIndex(record, whereMap.get("value"), indexOfCol)) {
-          t.getRecords().set(i,
-              replaceValueAtIndex(record, value, findColByName(cols, columnName)));
+        if (t.getRecords().get(i).hasValueAtIndex(whereMap.get("value"), indexOfCol)) {
+          t.getRecords().get(i).replaceValueAtIndex(value, findColByName(cols, columnName));
         }
       }
       t.writeToDB();
@@ -308,8 +302,8 @@ public abstract class IOUtils {
     String[] valueArray;
     // ----------------------
     try {
-      for (String record : t) {
-        valueArray = record.split(",");
+      for (Record record : t) {
+        valueArray = record.toString().split(",");
         /**
          * When a new record is appended to DB, it is separated into several value. Each value
          * matches a Column object. When each value is parsed to byte array and written to DB, the
@@ -320,10 +314,7 @@ public abstract class IOUtils {
         for (int i = 0; i < valueArray.length; i++) {
           value = valueArray[i].trim();
           col = t.getColumns().get(i);
-          // parse the value for this column and write the value to DB
-          Method method =
-              DataType.class.getMethod(col.getDataType().getParseToByteArray(), String.class);
-          byteMaker.write((byte[]) method.invoke(null, value));
+          byteMaker.write(col.hitsString(value));
           // ----------------------
           NdxUtils.updateIndexAtAppendingColumn(schema, table, col, value,
               (int) tblRef(schema, table).length());
@@ -335,8 +326,7 @@ public abstract class IOUtils {
       if (!schema.equals(InfoSchema.getInfoSchema())) {
         InfoSchemaUtils.UpdateInfoSchema.atAppendingRecords(schema, table, rows);
       }
-    } catch (NoSuchMethodException | SecurityException | IllegalAccessException
-        | IllegalArgumentException | InvocationTargetException | IOException e) {
+    } catch (SecurityException | IllegalArgumentException | IOException e) {
       DBExceptions.newError(e);
     }
   }
@@ -372,7 +362,7 @@ public abstract class IOUtils {
 
   /**
    * Find a Column object in Columns lists according to ColumnName
-   * 
+   *
    * @param cols
    * @param columnName
    * @return
@@ -415,33 +405,6 @@ public abstract class IOUtils {
       DBExceptions.newError(e);
     }
     InfoSchemaUtils.UpdateInfoSchema.atClearRecords(schema, table);
-  }
-
-  /**
-   * Has value at index
-   * 
-   * @param values
-   * @param v
-   * @param index
-   * @return
-   */
-  public static boolean hasValueAtIndex(String values, String v, int index) {
-    String[] vs = values.split(",");
-    return vs[index].equals(v);
-  }
-
-  /**
-   * Replace value at index
-   * 
-   * @param record
-   * @param value
-   * @param i
-   * @return
-   */
-  public static String replaceValueAtIndex(String record, String value, int i) {
-    String[] valueArr = record.split(",");
-    valueArr[i] = value;
-    return Joiner.on(",").join(valueArr);
   }
 
 }

@@ -1,5 +1,7 @@
 package org.mo39.fmbh.databasedesign.model;
 
+import java.lang.reflect.InvocationTargetException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -118,5 +120,25 @@ public class Column implements Comparable<Column> {
     this.ordinalPosi = ordinalPosi;
   }
 
+  public Object hitsBuffer(ByteBuffer bb) {
+    try {
+      return DataType.class.getMethod(dataType.getParseFromByteBuffer(), ByteBuffer.class)
+          .invoke(null, bb);
+    } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException
+        | NoSuchMethodException | SecurityException e) {
+      DBExceptions.newError(e);
+      return null;
+    }
+  }
+
+  public byte[] hitsString(String value) {
+    try {
+      return (byte[]) DataType.class.getMethod(dataType.getParseToByteArray(), String.class).invoke(null, value);
+    } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException
+        | NoSuchMethodException | SecurityException e) {
+      DBExceptions.newError(e);
+    }
+    return null;
+  }
 
 }

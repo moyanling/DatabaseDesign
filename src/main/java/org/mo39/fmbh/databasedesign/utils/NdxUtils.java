@@ -2,8 +2,6 @@ package org.mo39.fmbh.databasedesign.utils;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.List;
 
@@ -43,9 +41,7 @@ class NdxUtils {
     if (ndx == null) {
       // If no position is found, append the new one to the ndx list.
       Ndx newNdx;
-
       newNdx = new Ndx(col, value, position);
-
       ndxList.add(newNdx);
     } else {
       // If a position can be found, need to update the value and add new position
@@ -97,18 +93,14 @@ class NdxUtils {
   public static Ndx findNdx(Column col, String value, List<Ndx> ndxList) {
     byte[] byteArray;
     try {
-      byteArray = (byte[]) DataType.class
-          .getMethod(col.getDataType().getParseToByteArray(), String.class).invoke(null, value);
-      Object dataTypeValue =
-          DataType.class.getMethod(col.getDataType().getParseFromByteBuffer(), ByteBuffer.class)
-              .invoke(null, ByteBuffer.wrap(byteArray));
+      byteArray = col.hitsString(value);
+      Object dataTypeValue = col.hitsBuffer(ByteBuffer.wrap(byteArray));
       for (Ndx ndx : ndxList) {
         if (ndx.value == null ? dataTypeValue == null : ndx.value.equals(dataTypeValue)) {
           return ndx;
         }
       }
-    } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException
-        | NoSuchMethodException | SecurityException e) {
+    } catch (IllegalArgumentException | SecurityException e) {
       DBExceptions.newError(e);
     }
     return null;
@@ -139,19 +131,14 @@ class NdxUtils {
     }
 
     public Ndx(Column col, String value, int posi) {
-      byte[] byteArray;
       try {
-        byteArray = (byte[]) DataType.class
-            .getMethod(col.getDataType().getParseToByteArray(), String.class).invoke(null, value);
-        Object dataTypeValue =
-            DataType.class.getMethod(col.getDataType().getParseFromByteBuffer(), ByteBuffer.class)
-                .invoke(null, ByteBuffer.wrap(byteArray));
+        byte[] byteArray = col.hitsString(value);
+        Object dataTypeValue = col.hitsBuffer(ByteBuffer.wrap(byteArray));
         this.value = dataTypeValue;
         num = 1;
         positions = Lists.newArrayList(posi);
         this.col = col;
-      } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException
-          | NoSuchMethodException | SecurityException e) {
+      } catch (IllegalArgumentException | SecurityException e) {
         DBExceptions.newError(e);
       }
     }
@@ -165,19 +152,15 @@ class NdxUtils {
      * @throws Exception
      */
     public static Ndx parseFromBytes(ByteBuffer bb, Column col) {
-      Method method;
       try {
-        method =
-            DataType.class.getMethod(col.getDataType().getParseFromByteBuffer(), ByteBuffer.class);
-        Object value = method.invoke(null, bb);
+        Object value = col.hitsBuffer(bb);
         int num = DataType.parseIntFromByteBuffer(bb);
         List<Integer> positions = Lists.newArrayList();
         for (int i = 0; i < num; i++) {
           positions.add(DataType.parseIntFromByteBuffer(bb));
         }
         return new Ndx(value, num, positions, col);
-      } catch (NoSuchMethodException | SecurityException | IllegalAccessException
-          | IllegalArgumentException | InvocationTargetException e) {
+      } catch (SecurityException | IllegalArgumentException e) {
         DBExceptions.newError(e);
       }
       return null;
@@ -192,14 +175,11 @@ class NdxUtils {
     public byte[] parseToBytes() {
       byte[] posiBytes;
       byte[] result = new byte[0];
-      Method method;
       try {
-        method = DataType.class.getMethod(col.getDataType().getParseToByteArray(), String.class);
-
         if (value == null) {
           value = "NULL";
         }
-        byte[] valueBytes = (byte[]) method.invoke(null, value.toString());
+        byte[] valueBytes = col.hitsString(value.toString());
         result = ArrayUtils.addAll(result, valueBytes);
         byte[] numBytes = DataType.parseIntToByteArray(String.valueOf(num));
         result = ArrayUtils.addAll(result, numBytes);
@@ -207,8 +187,7 @@ class NdxUtils {
           posiBytes = DataType.parseIntToByteArray(String.valueOf(posi));
           result = ArrayUtils.addAll(result, posiBytes);
         }
-      } catch (NoSuchMethodException | SecurityException | IllegalAccessException
-          | IllegalArgumentException | InvocationTargetException e) {
+      } catch (SecurityException | IllegalArgumentException e) {
         DBExceptions.newError(e);
       }
       return result;

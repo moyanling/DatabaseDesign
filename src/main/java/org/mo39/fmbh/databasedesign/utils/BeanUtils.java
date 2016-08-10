@@ -1,5 +1,6 @@
 package org.mo39.fmbh.databasedesign.utils;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -11,7 +12,6 @@ import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.text.WordUtils;
 import org.mo39.fmbh.databasedesign.model.Column;
 import org.mo39.fmbh.databasedesign.model.DBExceptions;
-import org.mo39.fmbh.databasedesign.model.DataType;
 
 /**
  * Simple ORM without hbm.xml file.
@@ -35,12 +35,11 @@ public abstract class BeanUtils {
       for (Column col : columns) {
         String methodName = "set" + WordUtils.capitalize(col.getName());
         Method m = findMethod(beanClass, methodName, col.getDataType().getJavaClass());
-        m.invoke(toRet,
-            DataType.class.getMethod(col.getDataType().getParseFromByteBuffer(), ByteBuffer.class)
-                .invoke(null, record));
+        m.invoke(toRet, col.hitsBuffer(record));
       }
       return toRet;
-    } catch (Exception e) {
+    } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException
+        | InstantiationException e) {
       DBExceptions.newError(e);
     }
     return null;
